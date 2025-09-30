@@ -5,12 +5,10 @@ class AppState extends ChangeNotifier {
   List<String> _preferredCuisines = [];
   bool _isFirstLaunch = true;
   
-  // Getters
   String get username => _username;
   List<String> get preferredCuisines => _preferredCuisines;
   bool get isFirstLaunch => _isFirstLaunch;
   
-  // Setters
   void setUsername(String username) {
     _username = username;
     notifyListeners();

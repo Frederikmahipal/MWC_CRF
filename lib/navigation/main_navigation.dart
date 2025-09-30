@@ -12,7 +12,7 @@ class MainNavigation extends StatelessWidget {
   Widget build(BuildContext context) {
     return CupertinoTabScaffold(
       tabBar: CupertinoTabBar(
-        backgroundColor: AppSettings.backgroundColor,
+        backgroundColor: AppSettings.getBackgroundColor(context),
         activeColor: AppSettings.primaryColor,
         inactiveColor: AppSettings.secondaryColor,
         items: const [
@@ -24,10 +24,7 @@ class MainNavigation extends StatelessWidget {
             icon: Icon(CupertinoIcons.search),
             label: 'Search',
           ),
-          BottomNavigationBarItem(
-            icon: Icon(CupertinoIcons.map),
-            label: 'Map',
-          ),
+          BottomNavigationBarItem(icon: Icon(CupertinoIcons.map), label: 'Map'),
           BottomNavigationBarItem(
             icon: Icon(CupertinoIcons.person),
             label: 'Profile',

@@ -9,12 +9,11 @@ class FeedPage extends StatelessWidget {
     return CupertinoPageScaffold(
       navigationBar: const CupertinoNavigationBar(
         middle: Text('Restaurant Feed'),
-        backgroundColor: AppSettings.backgroundColor,
+        backgroundColor: CupertinoColors.systemGroupedBackground,
       ),
       child: SafeArea(
         child: CustomScrollView(
           slivers: [
-            // Header section with user preferences
             SliverToBoxAdapter(
               child: Container(
                 padding: const EdgeInsets.all(AppSettings.defaultPadding),
@@ -22,8 +21,10 @@ class FeedPage extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Good morning!',
-                      style: CupertinoTheme.of(context).textTheme.navTitleTextStyle,
+                      'Closest Restaurants',
+                      style: CupertinoTheme.of(
+                        context,
+                      ).textTheme.navTitleTextStyle,
                     ),
                     const SizedBox(height: 8),
                     Text(
@@ -34,16 +35,20 @@ class FeedPage extends StatelessWidget {
                 ),
               ),
             ),
-            
-            // Restaurant list
+
             SliverList(
               delegate: SliverChildBuilderDelegate(
                 (context, index) {
                   return Container(
-                    margin: const EdgeInsets.symmetric(horizontal: AppSettings.defaultPadding, vertical: 8),
+                    margin: const EdgeInsets.symmetric(
+                      horizontal: AppSettings.defaultPadding,
+                      vertical: 8,
+                    ),
                     decoration: BoxDecoration(
-                      color: AppSettings.backgroundColor,
-                      borderRadius: BorderRadius.circular(AppSettings.defaultBorderRadius),
+                      color: AppSettings.getSurfaceColor(context),
+                      borderRadius: BorderRadius.circular(
+                        AppSettings.defaultBorderRadius,
+                      ),
                       boxShadow: [
                         BoxShadow(
                           color: CupertinoColors.systemGrey.withOpacity(0.2),
@@ -57,12 +62,12 @@ class FeedPage extends StatelessWidget {
                       subtitle: const Text('Cuisine type • Distance'),
                       trailing: const Icon(CupertinoIcons.chevron_right),
                       onTap: () {
-                        // Navigate to restaurant details
+                        // TODO implement restaurant details
                       },
                     ),
                   );
                 },
-                childCount: 10, // Placeholder count
+                childCount: 10, 
               ),
             ),
           ],

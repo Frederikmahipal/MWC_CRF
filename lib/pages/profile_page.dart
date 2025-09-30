@@ -1,4 +1,9 @@
 import 'package:flutter/cupertino.dart';
+import '../core/app_settings.dart';
+import '../core/onboarding_controller.dart';
+import '../navigation/main_navigation.dart';
+import 'onboarding/name_input_page.dart';
+import 'preferences_page.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -9,14 +14,29 @@ class ProfilePage extends StatefulWidget {
 
 class _ProfilePageState extends State<ProfilePage> {
   String _username = 'Guest User';
+  String _avatar = '👤';
   int _reviewCount = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserData();
+  }
+
+  Future<void> _loadUserData() async {
+    final userData = await OnboardingController.getCurrentUser();
+    setState(() {
+      _username = userData['name'] ?? 'Guest User';
+      _avatar = userData['avatar'] ?? '👤';
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     return CupertinoPageScaffold(
       navigationBar: const CupertinoNavigationBar(
         middle: Text('Profile'),
-        backgroundColor: CupertinoColors.systemBackground,
+        backgroundColor: CupertinoColors.systemGroupedBackground,
       ),
       child: SafeArea(
         child: CustomScrollView(
@@ -27,7 +47,7 @@ class _ProfilePageState extends State<ProfilePage> {
                 padding: const EdgeInsets.all(24.0),
                 child: Column(
                   children: [
-                    // Profile picture placeholder
+                    // Profile picture with avatar
                     Container(
                       width: 80,
                       height: 80,
@@ -35,10 +55,11 @@ class _ProfilePageState extends State<ProfilePage> {
                         color: CupertinoColors.systemGrey5,
                         shape: BoxShape.circle,
                       ),
-                      child: const Icon(
-                        CupertinoIcons.person_fill,
-                        size: 40,
-                        color: CupertinoColors.systemGrey,
+                      child: Center(
+                        child: Text(
+                          _avatar,
+                          style: const TextStyle(fontSize: 40),
+                        ),
                       ),
                     ),
                     const SizedBox(height: 16),
@@ -52,22 +73,19 @@ class _ProfilePageState extends State<ProfilePage> {
                     const SizedBox(height: 8),
                     Text(
                       '$_reviewCount reviews',
-                      style: const TextStyle(
-                        color: CupertinoColors.systemGrey,
-                      ),
+                      style: const TextStyle(color: CupertinoColors.systemGrey),
                     ),
                   ],
                 ),
               ),
             ),
-            
-            // Stats section
+
             SliverToBoxAdapter(
               child: Container(
                 margin: const EdgeInsets.symmetric(horizontal: 16),
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: CupertinoColors.systemGrey6,
+                  color: AppSettings.getSurfaceColor(context),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Row(
@@ -80,31 +98,33 @@ class _ProfilePageState extends State<ProfilePage> {
                 ),
               ),
             ),
-            
+
             const SliverToBoxAdapter(child: SizedBox(height: 24)),
-            
-            // Menu items
             SliverList(
               delegate: SliverChildListDelegate([
                 _buildMenuItem(
                   icon: CupertinoIcons.heart,
                   title: 'My Favorites',
                   onTap: () {
-                    // Navigate to favorites
+                    // TODO implement favourites 
                   },
                 ),
                 _buildMenuItem(
                   icon: CupertinoIcons.star,
                   title: 'My Reviews',
                   onTap: () {
-                    // Navigate to user reviews
+                    // TODO implement user reviews
                   },
                 ),
                 _buildMenuItem(
                   icon: CupertinoIcons.settings,
                   title: 'Preferences',
                   onTap: () {
-                    // Navigate to preferences
+                    Navigator.of(context).push(
+                      CupertinoPageRoute(
+                        builder: (context) => const PreferencesPage(),
+                      ),
+                    );
                   },
                 ),
                 _buildMenuItem(
@@ -115,10 +135,10 @@ class _ProfilePageState extends State<ProfilePage> {
                   },
                 ),
                 _buildMenuItem(
-                  icon: CupertinoIcons.person_add,
-                  title: 'Sign In',
+                  icon: CupertinoIcons.refresh_circled,
+                  title: 'Reset App (Debug)',
                   onTap: () {
-                    _showSignInDialog();
+                    _showResetDialog();
                   },
                 ),
               ]),
@@ -134,10 +154,7 @@ class _ProfilePageState extends State<ProfilePage> {
       children: [
         Text(
           value,
-          style: const TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.w600,
-          ),
+          style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
         ),
         const SizedBox(height: 4),
         Text(
@@ -159,7 +176,7 @@ class _ProfilePageState extends State<ProfilePage> {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       decoration: BoxDecoration(
-        color: CupertinoColors.systemBackground,
+        color: AppSettings.getSurfaceColor(context),
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
@@ -183,7 +200,9 @@ class _ProfilePageState extends State<ProfilePage> {
       context: context,
       builder: (context) => CupertinoAlertDialog(
         title: const Text('Sign In'),
-        content: const Text('Enter your username to personalize your experience.'),
+        content: const Text(
+          'Enter your username to personalize your experience.',
+        ),
         actions: [
           CupertinoDialogAction(
             child: const Text('Cancel'),
@@ -193,12 +212,48 @@ class _ProfilePageState extends State<ProfilePage> {
             isDefaultAction: true,
             child: const Text('Sign In'),
             onPressed: () {
-              // Handle sign in
               Navigator.of(context).pop();
             },
           ),
         ],
       ),
     );
+  }
+
+  void _showResetDialog() {
+    showCupertinoDialog(
+      context: context,
+      builder: (context) => CupertinoAlertDialog(
+        title: const Text('Reset App'),
+        content: const Text(
+          'This will clear all app data and restart the onboarding process. This action cannot be undone.',
+        ),
+        actions: [
+          CupertinoDialogAction(
+            child: const Text('Cancel'),
+            onPressed: () => Navigator.of(context).pop(),
+          ),
+          CupertinoDialogAction(
+            isDestructiveAction: true,
+            child: const Text('Reset'),
+            onPressed: () {
+              Navigator.of(context).pop();
+              _resetApp();
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _resetApp() async {
+    await OnboardingController.resetOnboarding();
+
+    if (mounted) {
+      Navigator.of(context).pushAndRemoveUntil(
+        CupertinoPageRoute(builder: (context) => const NameInputPage()),
+        (route) => false,
+      );
+    }
   }
 }
