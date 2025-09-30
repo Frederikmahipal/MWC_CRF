@@ -41,13 +41,11 @@ class _ProfilePageState extends State<ProfilePage> {
       child: SafeArea(
         child: CustomScrollView(
           slivers: [
-            // Profile header
             SliverToBoxAdapter(
               child: Container(
                 padding: const EdgeInsets.all(24.0),
                 child: Column(
                   children: [
-                    // Profile picture with avatar
                     Container(
                       width: 80,
                       height: 80,
@@ -136,7 +134,7 @@ class _ProfilePageState extends State<ProfilePage> {
                 ),
                 _buildMenuItem(
                   icon: CupertinoIcons.refresh_circled,
-                  title: 'Reset App (Debug)',
+                  title: 'Reset App',
                   onTap: () {
                     _showResetDialog();
                   },

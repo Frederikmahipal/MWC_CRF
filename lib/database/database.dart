@@ -14,12 +14,41 @@ class Users extends Table {
   DateTimeColumn get createdAt => dateTime()();
 }
 
-@DriftDatabase(tables: [Users])
+class Restaurants extends Table {
+  TextColumn get id => text()();
+  TextColumn get name => text()();
+  TextColumn get cuisines => text()(); // JSON array as string
+  RealColumn get latitude => real()();
+  RealColumn get longitude => real()();
+  TextColumn get phone => text().nullable()();
+  TextColumn get website => text().nullable()();
+  TextColumn get openingHours => text().nullable()();
+  TextColumn get address => text().nullable()();
+  TextColumn get neighborhood => text().nullable()();
+  BoolColumn get hasIndoorSeating =>
+      boolean().withDefault(const Constant(false))();
+  BoolColumn get hasOutdoorSeating =>
+      boolean().withDefault(const Constant(false))();
+  BoolColumn get isWheelchairAccessible =>
+      boolean().withDefault(const Constant(false))();
+  BoolColumn get hasTakeaway => boolean().withDefault(const Constant(false))();
+  BoolColumn get hasDelivery => boolean().withDefault(const Constant(false))();
+  BoolColumn get hasWifi => boolean().withDefault(const Constant(false))();
+  BoolColumn get hasDriveThrough =>
+      boolean().withDefault(const Constant(false))();
+  DateTimeColumn get createdAt => dateTime()();
+  DateTimeColumn get updatedAt => dateTime()();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+@DriftDatabase(tables: [Users, Restaurants])
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
 }
 
 LazyDatabase _openConnection() {
