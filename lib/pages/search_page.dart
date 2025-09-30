@@ -1,4 +1,5 @@
 import 'package:flutter/cupertino.dart';
+import '../core/app_settings.dart';
 
 class SearchPage extends StatefulWidget {
   const SearchPage({super.key});
@@ -22,12 +23,11 @@ class _SearchPageState extends State<SearchPage> {
     return CupertinoPageScaffold(
       navigationBar: const CupertinoNavigationBar(
         middle: Text('Search Restaurants'),
-        backgroundColor: CupertinoColors.systemBackground,
+        backgroundColor: CupertinoColors.systemGroupedBackground,
       ),
       child: SafeArea(
         child: Column(
           children: [
-            // Search bar
             Container(
               padding: const EdgeInsets.all(16.0),
               child: CupertinoSearchTextField(
@@ -38,51 +38,52 @@ class _SearchPageState extends State<SearchPage> {
                 },
               ),
             ),
-            
-            // Filter chips
+
             Container(
               height: 50,
               padding: const EdgeInsets.symmetric(horizontal: 16.0),
               child: ListView(
                 scrollDirection: Axis.horizontal,
-                children: [
-                  'All',
-                  'Open Now',
-                  'Outdoor Seating',
-                  'Wheelchair Accessible',
-                  'Italian',
-                  'Asian',
-                  'Danish',
-                ].map((filter) {
-                  final isSelected = _selectedFilter == filter;
-                  return Container(
-                    margin: const EdgeInsets.only(right: 8),
-                    child: CupertinoButton(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                      color: isSelected 
-                          ? CupertinoColors.systemBlue 
-                          : CupertinoColors.systemGrey5,
-                      borderRadius: BorderRadius.circular(20),
-                      onPressed: () {
-                        setState(() {
-                          _selectedFilter = filter;
-                        });
-                      },
-                      child: Text(
-                        filter,
-                        style: TextStyle(
-                          color: isSelected 
-                              ? CupertinoColors.white 
-                              : CupertinoColors.label,
+                children:
+                    [
+                      'All',
+                      'Open Now',
+                      'Outdoor Seating',
+                      'Wheelchair Accessible',
+                      'Italian',
+                      'Asian',
+                      'Danish',
+                    ].map((filter) {
+                      final isSelected = _selectedFilter == filter;
+                      return Container(
+                        margin: const EdgeInsets.only(right: 8),
+                        child: CupertinoButton(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 8,
+                          ),
+                          color: isSelected
+                              ? CupertinoColors.systemBlue
+                              : CupertinoColors.systemGrey5,
+                          borderRadius: BorderRadius.circular(20),
+                          onPressed: () {
+                            setState(() {
+                              _selectedFilter = filter;
+                            });
+                          },
+                          child: Text(
+                            filter,
+                            style: TextStyle(
+                              color: isSelected
+                                  ? CupertinoColors.white
+                                  : CupertinoColors.label,
+                            ),
+                          ),
                         ),
-                      ),
-                    ),
-                  );
-                }).toList(),
+                      );
+                    }).toList(),
               ),
             ),
-            
-            // Search results
             Expanded(
               child: ListView.builder(
                 padding: const EdgeInsets.all(16.0),
@@ -91,7 +92,7 @@ class _SearchPageState extends State<SearchPage> {
                   return Container(
                     margin: const EdgeInsets.only(bottom: 12),
                     decoration: BoxDecoration(
-                      color: CupertinoColors.systemBackground,
+                      color: AppSettings.getSurfaceColor(context),
                       borderRadius: BorderRadius.circular(12),
                       boxShadow: [
                         BoxShadow(

@@ -1,4 +1,8 @@
 import 'package:flutter/cupertino.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
+import '../services/restaurant_service.dart';
+import '../models/restaurant.dart';
 
 class MapPage extends StatefulWidget {
   const MapPage({super.key});
@@ -8,145 +12,194 @@ class MapPage extends StatefulWidget {
 }
 
 class _MapPageState extends State<MapPage> {
-  bool _showList = false;
+  final RestaurantService _restaurantService = RestaurantService();
+  List<Restaurant> _restaurants = [];
+  bool _isLoading = true;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadRestaurants();
+  }
+
+  Future<void> _loadRestaurants() async {
+    try {
+      print('🗺️ Loading restaurants for map...');
+      final restaurants = await _restaurantService.getAllRestaurants().timeout(
+        const Duration(seconds: 30),
+      );
+      print('🗺️ Loaded ${restaurants.length} restaurants');
+      setState(() {
+        _restaurants = restaurants;
+        _isLoading = false;
+        _error = null;
+      });
+    } catch (e) {
+      print('🗺️ Error loading restaurants: $e');
+      setState(() {
+        _isLoading = false;
+        _error = e.toString();
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    final isDark = CupertinoTheme.brightnessOf(context) == Brightness.dark;
+
     return CupertinoPageScaffold(
       navigationBar: CupertinoNavigationBar(
-        middle: const Text('Restaurant Map'),
-        backgroundColor: CupertinoColors.systemBackground,
-        trailing: CupertinoButton(
-          padding: EdgeInsets.zero,
-          onPressed: () {
-            setState(() {
-              _showList = !_showList;
-            });
-          },
-          child: Icon(
-            _showList ? CupertinoIcons.map : CupertinoIcons.list_bullet,
-          ),
+        middle: Text(
+          _isLoading ? 'Loading...' : 'Restaurants (${_restaurants.length})',
         ),
+        backgroundColor: CupertinoColors.systemBackground,
       ),
-      child: SafeArea(
-        child: Stack(
-          children: [
-            // Map placeholder
-            Container(
-              width: double.infinity,
-              height: double.infinity,
-              color: CupertinoColors.systemGrey6,
-              child: const Center(
+      child: Stack(
+        children: [
+          FlutterMap(
+            options: MapOptions(
+              initialCenter: const LatLng(
+                55.6761,
+                12.5683,
+              ), // Copenhagen coordinates
+              initialZoom: 13.0,
+              minZoom: 10.0,
+              maxZoom: 18.0,
+            ),
+            children: [
+              TileLayer(
+                urlTemplate: isDark
+                    ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
+                    : 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                subdomains: const ['a', 'b', 'c'],
+                userAgentPackageName: 'com.example.crf',
+              ),
+              if (!_isLoading) MarkerLayer(markers: _buildRestaurantMarkers()),
+            ],
+          ),
+          if (_isLoading)
+            const Center(child: CupertinoActivityIndicator(radius: 20)),
+          if (_error != null)
+            Positioned(
+              top: 20,
+              left: 20,
+              right: 20,
+              child: Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: CupertinoColors.systemRed.withOpacity(0.9),
+                  borderRadius: BorderRadius.circular(8),
+                ),
                 child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(
-                      CupertinoIcons.map,
-                      size: 64,
-                      color: CupertinoColors.systemGrey,
-                    ),
-                    SizedBox(height: 16),
-                    Text(
-                      'Map View',
+                    const Text(
+                      'Failed to load restaurants',
                       style: TextStyle(
-                        fontSize: 18,
-                        color: CupertinoColors.systemGrey,
+                        color: CupertinoColors.white,
+                        fontWeight: FontWeight.bold,
                       ),
                     ),
-                    Text(
-                      'Restaurant locations will be shown here',
-                      style: TextStyle(
-                        color: CupertinoColors.systemGrey2,
-                      ),
+                    const SizedBox(height: 8),
+                    CupertinoButton.filled(
+                      onPressed: _loadRestaurants,
+                      child: const Text('Retry'),
                     ),
                   ],
                 ),
               ),
             ),
-            
-            // Bottom sheet with nearby restaurants
-            if (_showList)
-              Positioned(
-                bottom: 0,
-                left: 0,
-                right: 0,
-                child: Container(
-                  height: MediaQuery.of(context).size.height * 0.6,
-                  decoration: const BoxDecoration(
-                    color: CupertinoColors.systemBackground,
-                    borderRadius: BorderRadius.only(
-                      topLeft: Radius.circular(20),
-                      topRight: Radius.circular(20),
-                    ),
-                  ),
-                  child: Column(
-                    children: [
-                      // Handle bar
-                      Container(
-                        margin: const EdgeInsets.only(top: 8),
-                        width: 40,
-                        height: 4,
-                        decoration: BoxDecoration(
-                          color: CupertinoColors.systemGrey3,
-                          borderRadius: BorderRadius.circular(2),
-                        ),
-                      ),
-                      
-                      // Header
-                      Container(
-                        padding: const EdgeInsets.all(16),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            const Text(
-                              'Nearby Restaurants',
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                            CupertinoButton(
-                              padding: EdgeInsets.zero,
-                              onPressed: () {
-                                setState(() {
-                                  _showList = false;
-                                });
-                              },
-                              child: const Icon(CupertinoIcons.xmark_circle_fill),
-                            ),
-                          ],
-                        ),
-                      ),
-                      
-                      // Restaurant list
-                      Expanded(
-                        child: ListView.builder(
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
-                          itemCount: 8, // Placeholder count
-                          itemBuilder: (context, index) {
-                            return Container(
-                              margin: const EdgeInsets.only(bottom: 12),
-                              decoration: BoxDecoration(
-                                color: CupertinoColors.systemGrey6,
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: CupertinoListTile(
-                                title: Text('Restaurant ${index + 1}'),
-                                subtitle: const Text('Cuisine • 0.5 km away'),
-                                trailing: const Icon(CupertinoIcons.location),
-                                onTap: () {
-                                  // Show restaurant on map
-                                },
-                              ),
-                            );
-                          },
-                        ),
-                      ),
-                    ],
-                  ),
+        ],
+      ),
+    );
+  }
+
+  List<Marker> _buildRestaurantMarkers() {
+    return _restaurants.map((restaurant) {
+      return Marker(
+        point: restaurant.location,
+        width: 24,
+        height: 24,
+        child: GestureDetector(
+          onTap: () => _showRestaurantInfo(restaurant),
+          child: Container(
+            decoration: BoxDecoration(
+              color: CupertinoColors.systemBlue,
+              shape: BoxShape.circle,
+              border: Border.all(color: CupertinoColors.white, width: 1.5),
+              boxShadow: [
+                BoxShadow(
+                  color: CupertinoColors.black.withOpacity(0.2),
+                  blurRadius: 2,
+                  offset: const Offset(0, 1),
                 ),
-              ),
+              ],
+            ),
+            child: const Icon(
+              CupertinoIcons.location_solid,
+              color: CupertinoColors.white,
+              size: 12,
+            ),
+          ),
+        ),
+      );
+    }).toList();
+  }
+
+  void _showRestaurantInfo(Restaurant restaurant) {
+    showCupertinoModalPopup(
+      context: context,
+      builder: (context) => CupertinoActionSheet(
+        title: Text(restaurant.name),
+        message: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Cuisines: ${restaurant.cuisines.join(', ')}'),
+            if (restaurant.neighborhood != null)
+              Text('Neighborhood: ${restaurant.neighborhood}'),
+            if (restaurant.phone != null) Text('Phone: ${restaurant.phone}'),
+            if (restaurant.website != null)
+              Text('Website: ${restaurant.website}'),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                if (restaurant.features.hasOutdoorSeating)
+                  const Icon(
+                    CupertinoIcons.leaf_arrow_circlepath,
+                    size: 16,
+                    color: CupertinoColors.systemGreen,
+                  ),
+                if (restaurant.features.isWheelchairAccessible)
+                  const Icon(
+                    CupertinoIcons.checkmark_circle,
+                    size: 16,
+                    color: CupertinoColors.systemBlue,
+                  ),
+              ],
+            ),
           ],
+        ),
+        actions: [
+          CupertinoActionSheetAction(
+            onPressed: () {
+              Navigator.pop(context);
+              // TODO: Navigate to restaurant details
+            },
+            child: const Text('View Details'),
+          ),
+          CupertinoActionSheetAction(
+            onPressed: () {
+              Navigator.pop(context);
+              // TODO: Get directions
+            },
+            child: const Text('Get Directions'),
+          ),
+        ],
+        cancelButton: CupertinoActionSheetAction(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Cancel'),
         ),
       ),
     );
