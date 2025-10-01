@@ -1,32 +1,28 @@
 import 'dart:math';
 import '../models/restaurant.dart';
 import 'overpass_service.dart';
+import 'package:geocoding/geocoding.dart';
 
 class RestaurantService {
   final OverpassService _overpassService = OverpassService();
 
-  // Cache for restaurants to avoid repeated API calls
   List<Restaurant>? _cachedRestaurants;
   DateTime? _lastFetchTime;
   static const Duration _cacheExpiry = Duration(hours: 1);
 
-  /// Get all restaurants (with caching)
   Future<List<Restaurant>> getAllRestaurants() async {
-    // Return cached data if still valid
     if (_cachedRestaurants != null &&
         _lastFetchTime != null &&
         DateTime.now().difference(_lastFetchTime!) < _cacheExpiry) {
       return _cachedRestaurants!;
     }
 
-    // Fetch fresh data
     _cachedRestaurants = await _overpassService.fetchCopenhagenRestaurants();
     _lastFetchTime = DateTime.now();
 
     return _cachedRestaurants!;
   }
 
-  /// Get restaurants by cuisine
   Future<List<Restaurant>> getRestaurantsByCuisine(String cuisine) async {
     final allRestaurants = await getAllRestaurants();
     return allRestaurants.where((restaurant) {
@@ -36,7 +32,6 @@ class RestaurantService {
     }).toList();
   }
 
-  /// Search restaurants by name or cuisine
   Future<List<Restaurant>> searchRestaurants(String query) async {
     if (query.isEmpty) return await getAllRestaurants();
 
@@ -44,19 +39,16 @@ class RestaurantService {
     final lowercaseQuery = query.toLowerCase();
 
     return allRestaurants.where((restaurant) {
-      // Search in name
       if (restaurant.name.toLowerCase().contains(lowercaseQuery)) {
         return true;
       }
 
-      // Search in cuisines
       if (restaurant.cuisines.any(
         (cuisine) => cuisine.toLowerCase().contains(lowercaseQuery),
       )) {
         return true;
       }
 
-      // Search in neighborhood
       if (restaurant.neighborhood?.toLowerCase().contains(lowercaseQuery) ==
           true) {
         return true;
@@ -66,7 +58,6 @@ class RestaurantService {
     }).toList();
   }
 
-  /// Get restaurants with specific features
   Future<List<Restaurant>> getRestaurantsWithFeatures({
     bool? hasOutdoorSeating,
     bool? isWheelchairAccessible,
@@ -106,7 +97,6 @@ class RestaurantService {
     }).toList();
   }
 
-  /// Get restaurants near a location (within radius in km)
   Future<List<Restaurant>> getRestaurantsNearLocation(
     double latitude,
     double longitude,
@@ -125,7 +115,6 @@ class RestaurantService {
     }).toList();
   }
 
-  /// Get available cuisine types
   Future<List<String>> getAvailableCuisines() async {
     final allRestaurants = await getAllRestaurants();
     final cuisines = <String>{};
@@ -137,7 +126,7 @@ class RestaurantService {
     return cuisines.toList()..sort();
   }
 
-  /// Clear cache (useful for testing or forcing refresh)
+  /// Clear cache for testing
   void clearCache() {
     _cachedRestaurants = null;
     _lastFetchTime = null;
@@ -165,5 +154,51 @@ class RestaurantService {
 
   double _degreesToRadians(double degrees) {
     return degrees * (3.14159265359 / 180);
+  }
+
+  /// Convert coordinates to a readable address format
+  Future<String> convertToAddress(double lat, double lon) async {
+    try {
+      List<Placemark> placemarks = await placemarkFromCoordinates(lat, lon);
+
+      if (placemarks.isEmpty) {
+        return '${lat.toStringAsFixed(4)}, ${lon.toStringAsFixed(4)}';
+      }
+
+      final placemark = placemarks.first;
+      final addressParts = <String>[];
+
+      final street = placemark.street;
+      final subLocality = placemark.subLocality;
+      final locality = placemark.locality;
+      final postalCode = placemark.postalCode;
+
+      if (street != null && street.isNotEmpty) {
+        addressParts.add(street);
+      }
+
+      if (subLocality != null && subLocality.isNotEmpty) {
+        addressParts.add(subLocality);
+      }
+
+      if (locality != null && locality.isNotEmpty) {
+        addressParts.add(locality);
+      }
+
+      if (postalCode != null && postalCode.isNotEmpty) {
+        addressParts.add(postalCode);
+      }
+
+      if (addressParts.isNotEmpty) {
+        return addressParts.join(', ');
+      }
+
+      // Fallback to coordinates
+      return '${lat.toStringAsFixed(4)}, ${lon.toStringAsFixed(4)}';
+    } catch (e) {
+      print('📍 Geocoding error: $e');
+      // Fallback to coordinates on error
+      return '${lat.toStringAsFixed(4)}, ${lon.toStringAsFixed(4)}';
+    }
   }
 }

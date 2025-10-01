@@ -1,7 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import '../core/app_settings.dart';
 import '../core/onboarding_controller.dart';
-import '../navigation/main_navigation.dart';
 import 'onboarding/name_input_page.dart';
 import 'preferences_page.dart';
 
@@ -193,30 +192,6 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
-  void _showSignInDialog() {
-    showCupertinoDialog(
-      context: context,
-      builder: (context) => CupertinoAlertDialog(
-        title: const Text('Sign In'),
-        content: const Text(
-          'Enter your username to personalize your experience.',
-        ),
-        actions: [
-          CupertinoDialogAction(
-            child: const Text('Cancel'),
-            onPressed: () => Navigator.of(context).pop(),
-          ),
-          CupertinoDialogAction(
-            isDefaultAction: true,
-            child: const Text('Sign In'),
-            onPressed: () {
-              Navigator.of(context).pop();
-            },
-          ),
-        ],
-      ),
-    );
-  }
 
   void _showResetDialog() {
     showCupertinoDialog(

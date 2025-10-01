@@ -1,5 +1,4 @@
 import 'package:shared_preferences/shared_preferences.dart';
-import '../core/app_settings.dart';
 
 class OnboardingController {
   static const String _keyOnboardingCompleted = 'onboarding_completed';

@@ -6,6 +6,7 @@ import 'core/theme_controller.dart';
 import 'core/onboarding_controller.dart';
 import 'navigation/main_navigation.dart';
 import 'pages/onboarding/name_input_page.dart';
+import 'services/firestore_service.dart';
 
 void main() {
   runApp(const CopenhagenRestaurantFinder());
@@ -56,6 +57,13 @@ class _AppInitializerState extends State<AppInitializer> {
   }
 
   Future<void> _initializeApp() async {
+    try {
+      await FirestoreService.initialize();
+    } catch (e) {
+      print('Firebase initialization error: $e');
+    }
+
+
     final themeController = Provider.of<ThemeController>(
       context,
       listen: false,

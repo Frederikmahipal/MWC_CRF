@@ -2,6 +2,7 @@ import 'package:flutter/cupertino.dart';
 import '../core/app_settings.dart';
 import '../services/restaurant_service.dart';
 import '../models/restaurant.dart';
+import 'restaurant_main_page.dart';
 
 class FeedPage extends StatefulWidget {
   const FeedPage({super.key});
@@ -172,7 +173,11 @@ class _FeedPageState extends State<FeedPage> {
           ],
         ),
         onTap: () {
-          // TODO implement restaurant details
+          Navigator.of(context).push(
+            CupertinoPageRoute(
+              builder: (context) => RestaurantMainPage(restaurant: restaurant),
+            ),
+          );
         },
       ),
     );
