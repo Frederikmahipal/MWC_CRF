@@ -1,7 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import '../pages/feed_page.dart';
 import '../pages/search_page.dart';
-import '../pages/map_page.dart';
+import '../pages/notifications_page.dart';
 import '../pages/profile_page.dart';
 import '../core/app_settings.dart';
 
@@ -24,7 +24,10 @@ class MainNavigation extends StatelessWidget {
             icon: Icon(CupertinoIcons.search),
             label: 'Search',
           ),
-          BottomNavigationBarItem(icon: Icon(CupertinoIcons.map), label: 'Map'),
+          BottomNavigationBarItem(
+            icon: Icon(CupertinoIcons.bell),
+            label: 'Notifications',
+          ),
           BottomNavigationBarItem(
             icon: Icon(CupertinoIcons.person),
             label: 'Profile',
@@ -38,7 +41,7 @@ class MainNavigation extends StatelessWidget {
           case 1:
             return const SearchPage();
           case 2:
-            return const MapPage();
+            return const NotificationsPage();
           case 3:
             return const ProfilePage();
           default:

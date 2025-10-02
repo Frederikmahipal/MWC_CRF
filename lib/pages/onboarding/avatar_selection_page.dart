@@ -1,15 +1,18 @@
 import 'package:flutter/cupertino.dart';
 import '../../core/onboarding_controller.dart';
 import '../../navigation/main_navigation.dart';
+import '../../repositories/remote/firestore_service.dart';
 
 class AvatarSelectionPage extends StatefulWidget {
   final String firstName;
   final String lastName;
+  final String phoneNumber;
 
   const AvatarSelectionPage({
     super.key,
     required this.firstName,
     required this.lastName,
+    required this.phoneNumber,
   });
 
   @override
@@ -19,7 +22,6 @@ class AvatarSelectionPage extends StatefulWidget {
 class _AvatarSelectionPageState extends State<AvatarSelectionPage> {
   String? _selectedAvatar;
 
-  // Food-related emoji options
   static const List<String> _avatarOptions = [
     '🍕',
     '🍔',
@@ -61,8 +63,6 @@ class _AvatarSelectionPageState extends State<AvatarSelectionPage> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const SizedBox(height: 40),
-
-              // Welcome text
               Text(
                 'Hi ${widget.firstName}! 👋',
                 style: const TextStyle(
@@ -81,7 +81,6 @@ class _AvatarSelectionPageState extends State<AvatarSelectionPage> {
 
               const SizedBox(height: 40),
 
-              // Avatar grid
               Expanded(
                 child: GridView.builder(
                   gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
@@ -156,44 +155,75 @@ class _AvatarSelectionPageState extends State<AvatarSelectionPage> {
   }
 
   void _complete() async {
-    // Generate user ID and save onboarding data
-    final userId = OnboardingController.generateUserId();
+    try {
+      final userId = 'user_${DateTime.now().millisecondsSinceEpoch}';
+      print('🔍 Creating user with ID: $userId');
+      print('📱 Phone number: ${widget.phoneNumber}');
+      print('👤 Name: ${widget.firstName} ${widget.lastName}');
 
-    await OnboardingController.completeOnboarding(
-      userId: userId,
-      firstName: widget.firstName,
-      lastName: widget.lastName,
-      avatarEmoji: _selectedAvatar!,
-    );
-
-    // Show success message and navigate to main app
-    if (mounted) {
-      showCupertinoDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (context) => CupertinoAlertDialog(
-          title: const Text('Welcome!'),
-          content: Text(
-            'Hi ${widget.firstName} ${widget.lastName} ${_selectedAvatar}!\n\nYour profile has been created successfully.',
-          ),
-          actions: [
-            CupertinoDialogAction(
-              isDefaultAction: true,
-              child: const Text('Get Started'),
-              onPressed: () {
-                Navigator.of(context).pop();
-                // Navigate to main app
-                Navigator.of(context).pushAndRemoveUntil(
-                  CupertinoPageRoute(
-                    builder: (context) => const MainNavigation(),
-                  ),
-                  (route) => false,
-                );
-              },
-            ),
-          ],
-        ),
+      await FirestoreService.createOrUpdateUser(
+        userId: userId,
+        firstName: widget.firstName,
+        lastName: widget.lastName,
+        avatarEmoji: _selectedAvatar!,
+        phoneNumber: widget.phoneNumber,
       );
+
+      await OnboardingController.completeOnboarding(
+        userId: userId,
+        firstName: widget.firstName,
+        lastName: widget.lastName,
+        avatarEmoji: _selectedAvatar!,
+      );
+
+      if (mounted) {
+        showCupertinoDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) => CupertinoAlertDialog(
+            title: const Text('Welcome!'),
+            content: Text(
+              'Hi ${widget.firstName} ${widget.lastName} ${_selectedAvatar}!\n\nYour profile has been created successfully.',
+            ),
+            actions: [
+              CupertinoDialogAction(
+                isDefaultAction: true,
+                child: const Text('Get Started'),
+                onPressed: () {
+                  Navigator.of(context).pop();
+                  // Navigate to main app
+                  Navigator.of(context).pushAndRemoveUntil(
+                    CupertinoPageRoute(
+                      builder: (context) => const MainNavigation(),
+                    ),
+                    (route) => false,
+                  );
+                },
+              ),
+            ],
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        _showError('Failed to complete setup: $e');
+      }
     }
+  }
+
+  void _showError(String message) {
+    showCupertinoDialog(
+      context: context,
+      builder: (context) => CupertinoAlertDialog(
+        title: const Text('Error'),
+        content: Text(message),
+        actions: [
+          CupertinoDialogAction(
+            child: const Text('OK'),
+            onPressed: () => Navigator.of(context).pop(),
+          ),
+        ],
+      ),
+    );
   }
 }

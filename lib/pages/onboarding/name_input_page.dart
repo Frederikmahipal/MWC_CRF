@@ -2,7 +2,9 @@ import 'package:flutter/cupertino.dart';
 import 'avatar_selection_page.dart';
 
 class NameInputPage extends StatefulWidget {
-  const NameInputPage({super.key});
+  final String phoneNumber;
+
+  const NameInputPage({super.key, required this.phoneNumber});
 
   @override
   State<NameInputPage> createState() => _NameInputPageState();
@@ -120,6 +122,7 @@ class _NameInputPageState extends State<NameInputPage> {
         builder: (context) => AvatarSelectionPage(
           firstName: _firstNameController.text.trim(),
           lastName: _lastNameController.text.trim(),
+          phoneNumber: widget.phoneNumber,
         ),
       ),
     );

@@ -1,13 +1,18 @@
 import 'package:flutter/cupertino.dart';
 import 'package:provider/provider.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'core/app_settings.dart';
 import 'core/app_state.dart';
 import 'core/theme_controller.dart';
-import 'core/onboarding_controller.dart';
 import 'navigation/main_navigation.dart';
-import 'pages/onboarding/name_input_page.dart';
+import 'pages/onboarding/welcome_page.dart';
+import 'services/user_detection_service.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp();
+
   runApp(const CopenhagenRestaurantFinder());
 }
 
@@ -46,38 +51,57 @@ class AppInitializer extends StatefulWidget {
 }
 
 class _AppInitializerState extends State<AppInitializer> {
-  bool _isLoading = true;
-  bool _showOnboarding = false;
-
   @override
-  void initState() {
-    super.initState();
-    _initializeApp();
-  }
+  Widget build(BuildContext context) {
+    return StreamBuilder<User?>(
+      stream: FirebaseAuth.instance.authStateChanges(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const CupertinoPageScaffold(
+            child: Center(child: CupertinoActivityIndicator()),
+          );
+        }
 
-  Future<void> _initializeApp() async {
-    final themeController = Provider.of<ThemeController>(
-      context,
-      listen: false,
+        if (snapshot.hasData) {
+          // User is authenticated, check if onboarding is completed
+          return const OnboardingWrapper();
+        } else {
+          // User is not authenticated, show welcome page
+          return const WelcomePage();
+        }
+      },
     );
-    await themeController.initialize();
-
-    final isCompleted = await OnboardingController.isOnboardingCompleted();
-
-    setState(() {
-      _showOnboarding = !isCompleted;
-      _isLoading = false;
-    });
   }
+}
+
+class OnboardingWrapper extends StatelessWidget {
+  const OnboardingWrapper({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    if (_isLoading) {
-      return const CupertinoPageScaffold(
-        child: Center(child: CupertinoActivityIndicator()),
-      );
-    }
+    return FutureBuilder<bool>(
+      future: _checkUserStatus(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const CupertinoPageScaffold(
+            child: Center(child: CupertinoActivityIndicator()),
+          );
+        }
 
-    return _showOnboarding ? const NameInputPage() : const MainNavigation();
+        if (snapshot.data == true) {
+          // User exists in Firestore, go to main app
+          return const MainNavigation();
+        } else {
+          // User doesn't exist in Firestore, show welcome page
+          return const WelcomePage();
+        }
+      },
+    );
+  }
+
+  Future<bool> _checkUserStatus() async {
+    // Check if user exists in Firestore
+    final userExists = await UserDetectionService.isUserInFirestore();
+    return userExists;
   }
 }

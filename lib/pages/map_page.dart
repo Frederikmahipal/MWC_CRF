@@ -3,6 +3,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import '../services/restaurant_service.dart';
 import '../models/restaurant.dart';
+import 'restaurant_main_page.dart';
 
 class MapPage extends StatefulWidget {
   const MapPage({super.key});
@@ -122,7 +123,14 @@ class _MapPageState extends State<MapPage> {
         width: 24,
         height: 24,
         child: GestureDetector(
-          onTap: () => _showRestaurantInfo(restaurant),
+          onTap: () {
+            Navigator.of(context).push(
+              CupertinoPageRoute(
+                builder: (context) =>
+                    RestaurantMainPage(restaurant: restaurant),
+              ),
+            );
+          },
           child: Container(
             decoration: BoxDecoration(
               color: CupertinoColors.systemBlue,
@@ -145,63 +153,5 @@ class _MapPageState extends State<MapPage> {
         ),
       );
     }).toList();
-  }
-
-  void _showRestaurantInfo(Restaurant restaurant) {
-    showCupertinoModalPopup(
-      context: context,
-      builder: (context) => CupertinoActionSheet(
-        title: Text(restaurant.name),
-        message: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Cuisines: ${restaurant.cuisines.join(', ')}'),
-            if (restaurant.neighborhood != null)
-              Text('Neighborhood: ${restaurant.neighborhood}'),
-            if (restaurant.phone != null) Text('Phone: ${restaurant.phone}'),
-            if (restaurant.website != null)
-              Text('Website: ${restaurant.website}'),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                if (restaurant.features.hasOutdoorSeating)
-                  const Icon(
-                    CupertinoIcons.leaf_arrow_circlepath,
-                    size: 16,
-                    color: CupertinoColors.systemGreen,
-                  ),
-                if (restaurant.features.isWheelchairAccessible)
-                  const Icon(
-                    CupertinoIcons.checkmark_circle,
-                    size: 16,
-                    color: CupertinoColors.systemBlue,
-                  ),
-              ],
-            ),
-          ],
-        ),
-        actions: [
-          CupertinoActionSheetAction(
-            onPressed: () {
-              Navigator.pop(context);
-              // TODO: Navigate to restaurant details
-            },
-            child: const Text('View Details'),
-          ),
-          CupertinoActionSheetAction(
-            onPressed: () {
-              Navigator.pop(context);
-              // TODO: Get directions
-            },
-            child: const Text('Get Directions'),
-          ),
-        ],
-        cancelButton: CupertinoActionSheetAction(
-          onPressed: () => Navigator.pop(context),
-          child: const Text('Cancel'),
-        ),
-      ),
-    );
   }
 }

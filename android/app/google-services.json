@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "904565808905",
+    "project_id": "copenhagen-restaurant-finder",
+    "storage_bucket": "copenhagen-restaurant-finder.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:904565808905:android:32ead646da0bce071bbdd8",
+        "android_client_info": {
+          "package_name": "com.example.crf"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA77XRFGgB8re-WJiv41KyVawVdRMfFtQs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

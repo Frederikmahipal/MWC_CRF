@@ -1,18 +1,16 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import '../models/restaurant.dart';
+import '../../models/restaurant.dart';
 
 class OverpassService {
   static const String _baseUrl = 'https://overpass-api.de/api/interpreter';
   static const Duration _timeout = Duration(seconds: 30);
 
-  // Copenhagen bounding box (south, west, north, east)
   static const double _south = 55.59;
   static const double _west = 12.50;
   static const double _north = 55.71;
   static const double _east = 12.65;
 
-  /// Fetch all restaurants in Copenhagen
   Future<List<Restaurant>> fetchCopenhagenRestaurants() async {
     try {
       final query = _buildCopenhagenRestaurantsQuery();
@@ -24,7 +22,6 @@ class OverpassService {
     }
   }
 
-  /// Fetch restaurants by cuisine type
   Future<List<Restaurant>> fetchRestaurantsByCuisine(String cuisine) async {
     try {
       final query = _buildCuisineQuery(cuisine);
@@ -59,7 +56,6 @@ out center meta;
 ''';
   }
 
-  /// Make HTTP request to Overpass API
   Future<Map<String, dynamic>> _makeRequest(String query) async {
     final response = await http
         .post(
@@ -76,7 +72,6 @@ out center meta;
     }
   }
 
-  /// Parse Overpass API response into Restaurant objects
   List<Restaurant> _parseRestaurants(Map<String, dynamic> response) {
     final List<Restaurant> restaurants = [];
 
@@ -99,15 +94,12 @@ out center meta;
     return restaurants;
   }
 
-  /// Parse individual restaurant element
   Restaurant? _parseRestaurantElement(Map<String, dynamic> element) {
     final tags = element['tags'] as Map<String, dynamic>?;
     if (tags == null) return null;
 
-    // Skip if no name
     if (tags['name'] == null) return null;
 
-    // Get coordinates
     double? lat, lon;
     if (element['type'] == 'node') {
       lat = element['lat']?.toDouble();

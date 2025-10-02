@@ -61,7 +61,6 @@ class AppSettings {
     'Vegan',
   ];
 
-  // TODO update when api is handled
   static const List<String> filterOptions = [
     'Open Now',
     'Outdoor Seating',
