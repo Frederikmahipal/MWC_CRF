@@ -4,23 +4,40 @@ import 'overpass_service.dart';
 import 'package:geocoding/geocoding.dart';
 
 class RestaurantService {
+  static final RestaurantService _instance = RestaurantService._internal();
+  factory RestaurantService() => _instance;
+  RestaurantService._internal();
+
   final OverpassService _overpassService = OverpassService();
 
   List<Restaurant>? _cachedRestaurants;
   DateTime? _lastFetchTime;
-  static const Duration _cacheExpiry = Duration(hours: 1);
+  static const Duration _cacheExpiry = Duration(
+    hours: 6,
+  ); 
 
   Future<List<Restaurant>> getAllRestaurants() async {
+    // Return cached data if available and not expired
     if (_cachedRestaurants != null &&
         _lastFetchTime != null &&
         DateTime.now().difference(_lastFetchTime!) < _cacheExpiry) {
+      print('Returning fresh cached restaurants');
       return _cachedRestaurants!;
     }
 
-    _cachedRestaurants = await _overpassService.fetchCopenhagenRestaurants();
-    _lastFetchTime = DateTime.now();
+    try {
+      _cachedRestaurants = await _overpassService
+          .fetchCopenhagenRestaurants()
+          .timeout(const Duration(seconds: 15));
+      _lastFetchTime = DateTime.now();
+      return _cachedRestaurants!;
+    } catch (e) {
 
-    return _cachedRestaurants!;
+      if (_cachedRestaurants != null) {
+        return _cachedRestaurants!;
+      }
+      return [];
+    }
   }
 
   Future<List<Restaurant>> getRestaurantsByCuisine(String cuisine) async {
@@ -126,13 +143,12 @@ class RestaurantService {
     return cuisines.toList()..sort();
   }
 
-  /// Clear cache for testing
   void clearCache() {
     _cachedRestaurants = null;
     _lastFetchTime = null;
   }
 
-  /// Calculate distance between two points in kilometers
+// Calculate distance between two points in kilometers
   double _calculateDistance(
     double lat1,
     double lon1,
@@ -156,7 +172,6 @@ class RestaurantService {
     return degrees * (3.14159265359 / 180);
   }
 
-  /// Convert coordinates to a readable address format
   Future<String> convertToAddress(double lat, double lon) async {
     try {
       List<Placemark> placemarks = await placemarkFromCoordinates(lat, lon);
@@ -193,11 +208,8 @@ class RestaurantService {
         return addressParts.join(', ');
       }
 
-      // Fallback to coordinates
       return '${lat.toStringAsFixed(4)}, ${lon.toStringAsFixed(4)}';
     } catch (e) {
-      print('📍 Geocoding error: $e');
-      // Fallback to coordinates on error
       return '${lat.toStringAsFixed(4)}, ${lon.toStringAsFixed(4)}';
     }
   }

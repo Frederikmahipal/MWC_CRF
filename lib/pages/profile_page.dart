@@ -1,8 +1,14 @@
 import 'package:flutter/cupertino.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:crf/services/user_detection_service.dart';
 import '../core/app_settings.dart';
 import '../core/onboarding_controller.dart';
-import 'onboarding/name_input_page.dart';
+import '../services/favorites_service.dart';
+import '../services/review_service.dart';
+import 'onboarding/welcome_page.dart';
 import 'preferences_page.dart';
+import 'favorites_page.dart';
+import 'my_reviews_page.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -11,10 +17,11 @@ class ProfilePage extends StatefulWidget {
   State<ProfilePage> createState() => _ProfilePageState();
 }
 
-class _ProfilePageState extends State<ProfilePage> {
+class _ProfilePageState extends State<ProfilePage> with RouteAware {
   String _username = 'Guest User';
   String _avatar = '👤';
   int _reviewCount = 0;
+  int _favoriteCount = 0;
 
   @override
   void initState() {
@@ -22,12 +29,74 @@ class _ProfilePageState extends State<ProfilePage> {
     _loadUserData();
   }
 
+  @override
+  void didPopNext() {
+    super.didPopNext();
+    _loadFavoriteCount();
+    _loadReviewCount();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (ModalRoute.of(context)?.isCurrent == true) {
+      _loadFavoriteCount();
+      _loadReviewCount();
+    }
+  }
+
   Future<void> _loadUserData() async {
-    final userData = await OnboardingController.getCurrentUser();
-    setState(() {
-      _username = userData['name'] ?? 'Guest User';
-      _avatar = userData['avatar'] ?? '👤';
-    });
+    try {
+      final userData = await UserDetectionService.getUserData();
+      if (userData != null) {
+        setState(() {
+          _username = '${userData['firstName']} ${userData['lastName']}';
+          _avatar = userData['avatarEmoji'] ?? '👤';
+        });
+      } else {
+        final localData = await OnboardingController.getCurrentUser();
+        setState(() {
+          _username = localData['name'] ?? 'Guest User';
+          _avatar = localData['avatar'] ?? '👤';
+        });
+      }
+    } catch (e) {
+      print('Error loading user data: $e');
+      final localData = await OnboardingController.getCurrentUser();
+      setState(() {
+        _username = localData['name'] ?? 'Guest User';
+        _avatar = localData['avatar'] ?? '👤';
+      });
+    }
+    _loadFavoriteCount();
+    _loadReviewCount();
+  }
+
+  Future<void> _loadFavoriteCount() async {
+    try {
+      final favorites = await FavoritesService.getUserFavorites();
+      if (mounted) {
+        setState(() {
+          _favoriteCount = favorites.length;
+        });
+      }
+    } catch (e) {
+      print('Error loading favorite count: $e');
+    }
+  }
+
+  Future<void> _loadReviewCount() async {
+    try {
+      final reviews = await ReviewService.getUserReviews();
+      if (mounted) {
+        setState(() {
+          _reviewCount = reviews.length;
+        });
+        print('📊 Updated review count: $_reviewCount');
+      }
+    } catch (e) {
+      print('Error loading review count: $e');
+    }
   }
 
   @override
@@ -67,11 +136,6 @@ class _ProfilePageState extends State<ProfilePage> {
                         fontWeight: FontWeight.w600,
                       ),
                     ),
-                    const SizedBox(height: 8),
-                    Text(
-                      '$_reviewCount reviews',
-                      style: const TextStyle(color: CupertinoColors.systemGrey),
-                    ),
                   ],
                 ),
               ),
@@ -89,7 +153,7 @@ class _ProfilePageState extends State<ProfilePage> {
                   mainAxisAlignment: MainAxisAlignment.spaceAround,
                   children: [
                     _buildStatItem('Reviews', _reviewCount.toString()),
-                    _buildStatItem('Favorites', '0'),
+                    _buildStatItem('Favorites', _favoriteCount.toString()),
                     _buildStatItem('Visited', '0'),
                   ],
                 ),
@@ -102,15 +166,25 @@ class _ProfilePageState extends State<ProfilePage> {
                 _buildMenuItem(
                   icon: CupertinoIcons.heart,
                   title: 'My Favorites',
-                  onTap: () {
-                    // TODO implement favourites 
+                  onTap: () async {
+                    await Navigator.of(context).push(
+                      CupertinoPageRoute(
+                        builder: (context) => const FavoritesPage(),
+                      ),
+                    );
+                    _loadFavoriteCount();
                   },
                 ),
                 _buildMenuItem(
                   icon: CupertinoIcons.star,
                   title: 'My Reviews',
-                  onTap: () {
-                    // TODO implement user reviews
+                  onTap: () async {
+                    await Navigator.of(context).push(
+                      CupertinoPageRoute(
+                        builder: (context) => const MyReviewsPage(),
+                      ),
+                    );
+                    _loadReviewCount();
                   },
                 ),
                 _buildMenuItem(
@@ -128,14 +202,13 @@ class _ProfilePageState extends State<ProfilePage> {
                   icon: CupertinoIcons.info_circle,
                   title: 'About',
                   onTap: () {
-                    // Show about dialog
                   },
                 ),
                 _buildMenuItem(
-                  icon: CupertinoIcons.refresh_circled,
-                  title: 'Reset App',
+                  icon: CupertinoIcons.square_arrow_right,
+                  title: 'Logout',
                   onTap: () {
-                    _showResetDialog();
+                    _showLogoutDialog();
                   },
                 ),
               ]),
@@ -192,14 +265,13 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
-
-  void _showResetDialog() {
+  void _showLogoutDialog() {
     showCupertinoDialog(
       context: context,
       builder: (context) => CupertinoAlertDialog(
-        title: const Text('Reset App'),
+        title: const Text('Logout'),
         content: const Text(
-          'This will clear all app data and restart the onboarding process. This action cannot be undone.',
+          'Are you sure you want to logout? You will need to sign in again to access your account.',
         ),
         actions: [
           CupertinoDialogAction(
@@ -208,10 +280,10 @@ class _ProfilePageState extends State<ProfilePage> {
           ),
           CupertinoDialogAction(
             isDestructiveAction: true,
-            child: const Text('Reset'),
+            child: const Text('Logout'),
             onPressed: () {
               Navigator.of(context).pop();
-              _resetApp();
+              _logout();
             },
           ),
         ],
@@ -219,14 +291,26 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
-  void _resetApp() async {
-    await OnboardingController.resetOnboarding();
+  void _logout() async {
+    try {
+      await FirebaseAuth.instance.signOut();
 
-    if (mounted) {
-      Navigator.of(context).pushAndRemoveUntil(
-        CupertinoPageRoute(builder: (context) => const NameInputPage()),
-        (route) => false,
-      );
+      await OnboardingController.resetOnboarding();
+
+      if (mounted) {
+        Navigator.of(context).pushAndRemoveUntil(
+          CupertinoPageRoute(builder: (context) => const WelcomePage()),
+          (route) => false,
+        );
+      }
+    } catch (e) {
+      print('Error during logout: $e');
+      if (mounted) {
+        Navigator.of(context).pushAndRemoveUntil(
+          CupertinoPageRoute(builder: (context) => const WelcomePage()),
+          (route) => false,
+        );
+      }
     }
   }
 }

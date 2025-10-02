@@ -6,14 +6,6 @@ import 'package:path/path.dart' as p;
 
 part 'database.g.dart';
 
-class Users extends Table {
-  IntColumn get id => integer().autoIncrement()();
-  TextColumn get firstName => text()();
-  TextColumn get lastName => text()();
-  TextColumn get avatarEmoji => text()();
-  DateTimeColumn get createdAt => dateTime()();
-}
-
 class Restaurants extends Table {
   TextColumn get id => text()();
   TextColumn get name => text()();
@@ -43,12 +35,12 @@ class Restaurants extends Table {
   Set<Column> get primaryKey => {id};
 }
 
-@DriftDatabase(tables: [Users, Restaurants])
+@DriftDatabase(tables: [Restaurants])
 class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 3;
 }
 
 LazyDatabase _openConnection() {

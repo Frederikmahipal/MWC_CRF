@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import '../models/restaurant.dart';
+import '../../models/restaurant.dart';
 
 class OverpassService {
   static const String _baseUrl = 'https://overpass-api.de/api/interpreter';
@@ -98,7 +98,6 @@ out center meta;
     final tags = element['tags'] as Map<String, dynamic>?;
     if (tags == null) return null;
 
-    // Skip if no name
     if (tags['name'] == null) return null;
 
     double? lat, lon;

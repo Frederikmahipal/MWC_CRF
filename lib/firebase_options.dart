@@ -60,4 +60,5 @@ class DefaultFirebaseOptions {
     storageBucket: 'copenhagen-restaurant-finder.firebasestorage.app',
     iosBundleId: 'com.example.crf',
   );
+
 }

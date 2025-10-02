@@ -1,6 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_core/firebase_core.dart';
-import '../firebase_options.dart';
+import '../../../firebase_options.dart';
 
 class FirestoreService {
   static final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -46,11 +46,13 @@ class FirestoreService {
     required String firstName,
     required String lastName,
     required String avatarEmoji,
+    required String phoneNumber,
   }) async {
     await _firestore.collection(_usersCollection).doc(userId).set({
       'firstName': firstName,
       'lastName': lastName,
       'avatarEmoji': avatarEmoji,
+      'phoneNumber': phoneNumber,
       'createdAt': FieldValue.serverTimestamp(),
       'updatedAt': FieldValue.serverTimestamp(),
     }, SetOptions(merge: true));
