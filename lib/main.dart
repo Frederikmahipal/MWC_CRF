@@ -34,6 +34,8 @@ class CopenhagenRestaurantFinder extends StatelessWidget {
             theme: CupertinoThemeData(
               primaryColor: AppSettings.primaryColor,
               brightness: themeController.brightness,
+              scaffoldBackgroundColor: AppSettings.getBackgroundColor(context),
+              barBackgroundColor: AppSettings.getSurfaceColor(context),
             ),
             home: const AppInitializer(),
           );
@@ -63,10 +65,8 @@ class _AppInitializerState extends State<AppInitializer> {
         }
 
         if (snapshot.hasData) {
-          // User is authenticated, check if onboarding is completed
           return const OnboardingWrapper();
         } else {
-          // User is not authenticated, show welcome page
           return const WelcomePage();
         }
       },
@@ -89,10 +89,8 @@ class OnboardingWrapper extends StatelessWidget {
         }
 
         if (snapshot.data == true) {
-          // User exists in Firestore, go to main app
           return const MainNavigation();
         } else {
-          // User doesn't exist in Firestore, show welcome page
           return const WelcomePage();
         }
       },
@@ -100,7 +98,6 @@ class OnboardingWrapper extends StatelessWidget {
   }
 
   Future<bool> _checkUserStatus() async {
-    // Check if user exists in Firestore
     final userExists = await UserDetectionService.isUserInFirestore();
     return userExists;
   }

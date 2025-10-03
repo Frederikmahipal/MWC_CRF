@@ -44,7 +44,7 @@ class Restaurant {
   }
 
   static List<String> _parseCuisines(dynamic cuisineData) {
-    if (cuisineData == null) return ['Unknown'];
+    if (cuisineData == null) return [''];
 
     final cuisineString = cuisineData.toString();
     return cuisineString.split(';').map((c) => c.trim()).toList();

@@ -228,13 +228,13 @@ class _RestaurantMainPageState extends State<RestaurantMainPage> {
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
           color: _isFavorited
-              ? CupertinoColors.systemRed.withOpacity(0.1)
-              : CupertinoColors.systemGrey.withOpacity(0.1),
+              ? AppSettings.primaryColor.withOpacity(0.1)
+              : AppSettings.getSecondaryTextColor(context).withOpacity(0.1),
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
             color: _isFavorited
-                ? CupertinoColors.systemRed.withOpacity(0.3)
-                : CupertinoColors.systemGrey.withOpacity(0.3),
+                ? AppSettings.primaryColor.withOpacity(0.3)
+                : AppSettings.getSecondaryTextColor(context).withOpacity(0.3),
             width: 1,
           ),
         ),
@@ -243,8 +243,8 @@ class _RestaurantMainPageState extends State<RestaurantMainPage> {
             : Icon(
                 _isFavorited ? CupertinoIcons.heart_fill : CupertinoIcons.heart,
                 color: _isFavorited
-                    ? CupertinoColors.systemRed
-                    : CupertinoColors.systemGrey,
+                    ? AppSettings.primaryColor
+                    : AppSettings.getSecondaryTextColor(context),
                 size: 20,
               ),
       ),
@@ -712,7 +712,12 @@ class _RestaurantMainPageState extends State<RestaurantMainPage> {
             children: List.generate(5, (index) {
               return Text(
                 index < review.rating ? '⭐' : '☆',
-                style: const TextStyle(fontSize: 14),
+                style: TextStyle(
+                  fontSize: 14,
+                  color: index < review.rating
+                      ? AppSettings.accentColor
+                      : AppSettings.getSecondaryTextColor(context),
+                ),
               );
             }),
           ),

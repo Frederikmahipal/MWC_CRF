@@ -125,17 +125,6 @@ class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
   @override
   Widget build(BuildContext context) {
     return CupertinoPageScaffold(
-      navigationBar: CupertinoNavigationBar(
-        middle: Text(_isMapExpanded ? 'Map View' : 'Search & Map'),
-        backgroundColor: CupertinoColors.systemGroupedBackground,
-        trailing: _isMapExpanded
-            ? CupertinoButton(
-                padding: EdgeInsets.zero,
-                onPressed: _toggleMapExpansion,
-                child: const Text('Done'),
-              )
-            : null,
-      ),
       child: _isLoading
           ? const Center(child: CupertinoActivityIndicator(radius: 20))
           : _buildMainContent(),
@@ -198,8 +187,8 @@ class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
             child: CupertinoButton(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               color: isSelected
-                  ? CupertinoColors.systemBlue
-                  : CupertinoColors.systemGrey5,
+                  ? AppSettings.primaryColor
+                  : AppSettings.getChipColor(context),
               borderRadius: BorderRadius.circular(20),
               onPressed: () => _toggleCuisineFilter(cuisine),
               child: Text(
@@ -207,7 +196,7 @@ class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
                 style: TextStyle(
                   color: isSelected
                       ? CupertinoColors.white
-                      : CupertinoColors.label,
+                      : AppSettings.getTextColor(context),
                 ),
               ),
             ),
@@ -256,7 +245,7 @@ class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
               right: 8,
               child: CupertinoButton(
                 padding: const EdgeInsets.all(8),
-                color: CupertinoColors.systemBlue.withOpacity(0.8),
+                color: AppSettings.primaryColor.withOpacity(0.9),
                 borderRadius: BorderRadius.circular(20),
                 onPressed: _toggleMapExpansion,
                 child: const Icon(
@@ -275,22 +264,42 @@ class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
   Widget _buildExpandedMap() {
     final isDark = CupertinoTheme.brightnessOf(context) == Brightness.dark;
 
-    return FlutterMap(
-      options: MapOptions(
-        initialCenter: const LatLng(55.6761, 12.5683),
-        initialZoom: 13.0,
-        minZoom: 10.0,
-        maxZoom: 18.0,
-      ),
+    return Stack(
       children: [
-        TileLayer(
-          urlTemplate: isDark
-              ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
-              : 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-          subdomains: const ['a', 'b', 'c'],
-          userAgentPackageName: 'com.example.crf',
+        FlutterMap(
+          options: MapOptions(
+            initialCenter: const LatLng(55.6761, 12.5683),
+            initialZoom: 13.0,
+            minZoom: 10.0,
+            maxZoom: 18.0,
+          ),
+          children: [
+            TileLayer(
+              urlTemplate: isDark
+                  ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
+                  : 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+              subdomains: const ['a', 'b', 'c'],
+              userAgentPackageName: 'com.example.crf',
+            ),
+            MarkerLayer(markers: _buildFilteredMarkers()),
+          ],
         ),
-        MarkerLayer(markers: _buildFilteredMarkers()),
+        // Close button overlay
+        Positioned(
+          top: 50, // Safe area top
+          right: 16,
+          child: CupertinoButton(
+            padding: const EdgeInsets.all(12),
+            color: AppSettings.primaryColor.withOpacity(0.9),
+            borderRadius: BorderRadius.circular(20),
+            onPressed: _toggleMapExpansion,
+            child: const Icon(
+              CupertinoIcons.xmark,
+              color: CupertinoColors.white,
+              size: 18,
+            ),
+          ),
+        ),
       ],
     );
   }
@@ -312,7 +321,7 @@ class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
           },
           child: Container(
             decoration: BoxDecoration(
-              color: CupertinoColors.systemBlue,
+              color: AppSettings.primaryColor,
               shape: BoxShape.circle,
               border: Border.all(color: CupertinoColors.white, width: 1),
               boxShadow: [
@@ -435,5 +444,3 @@ class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
     );
   }
 }
-
- 

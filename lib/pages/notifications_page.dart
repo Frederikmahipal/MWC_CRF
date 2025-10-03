@@ -1,5 +1,4 @@
 import 'package:flutter/cupertino.dart';
-import '../core/app_settings.dart';
 
 class NotificationsPage extends StatelessWidget {
   const NotificationsPage({super.key});

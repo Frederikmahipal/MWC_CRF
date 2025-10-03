@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_core/firebase_core.dart';
 import '../../../firebase_options.dart';
+import '../../models/user.dart';
 
 class FirestoreService {
   static final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -37,8 +38,20 @@ class FirestoreService {
     }
   }
 
-  static Future<DocumentSnapshot> getUser(String userId) async {
-    return await _firestore.collection(_usersCollection).doc(userId).get();
+  static Future<User?> getUser(String userId) async {
+    try {
+      final doc = await _firestore
+          .collection(_usersCollection)
+          .doc(userId)
+          .get();
+      if (doc.exists) {
+        return User.fromMap(doc.data()!, doc.id);
+      }
+      return null;
+    } catch (e) {
+      print('Error getting user: $e');
+      return null;
+    }
   }
 
   static Future<void> createOrUpdateUser({
@@ -48,14 +61,24 @@ class FirestoreService {
     required String avatarEmoji,
     required String phoneNumber,
   }) async {
-    await _firestore.collection(_usersCollection).doc(userId).set({
-      'firstName': firstName,
-      'lastName': lastName,
-      'avatarEmoji': avatarEmoji,
-      'phoneNumber': phoneNumber,
-      'createdAt': FieldValue.serverTimestamp(),
-      'updatedAt': FieldValue.serverTimestamp(),
-    }, SetOptions(merge: true));
+    try {
+      final user = User.create(
+        id: userId,
+        firstName: firstName,
+        lastName: lastName,
+        avatarEmoji: avatarEmoji,
+        phoneNumber: phoneNumber,
+      );
+
+      await _firestore.collection(_usersCollection).doc(userId).set({
+        ...user.toMap(),
+        'createdAt': FieldValue.serverTimestamp(),
+        'updatedAt': FieldValue.serverTimestamp(),
+      }, SetOptions(merge: true));
+    } catch (e) {
+      print('Error creating/updating user: $e');
+      rethrow;
+    }
   }
 
   static Future<String> addReview({
@@ -115,7 +138,7 @@ class FirestoreService {
         .get();
     if (!doc.exists) return false;
 
-    final data = doc.data() as Map<String, dynamic>?;
+    final data = doc.data();
     return data?[restaurantId] == true;
   }
 

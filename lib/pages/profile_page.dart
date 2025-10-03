@@ -47,11 +47,11 @@ class _ProfilePageState extends State<ProfilePage> with RouteAware {
 
   Future<void> _loadUserData() async {
     try {
-      final userData = await UserDetectionService.getUserData();
-      if (userData != null) {
+      final user = await UserDetectionService.getUserData();
+      if (user != null) {
         setState(() {
-          _username = '${userData['firstName']} ${userData['lastName']}';
-          _avatar = userData['avatarEmoji'] ?? '👤';
+          _username = user.fullName;
+          _avatar = user.avatarEmoji;
         });
       } else {
         final localData = await OnboardingController.getCurrentUser();
@@ -201,8 +201,7 @@ class _ProfilePageState extends State<ProfilePage> with RouteAware {
                 _buildMenuItem(
                   icon: CupertinoIcons.info_circle,
                   title: 'About',
-                  onTap: () {
-                  },
+                  onTap: () {},
                 ),
                 _buildMenuItem(
                   icon: CupertinoIcons.square_arrow_right,

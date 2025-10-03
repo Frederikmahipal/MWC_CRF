@@ -17,7 +17,6 @@ class RestaurantService {
   ); 
 
   Future<List<Restaurant>> getAllRestaurants() async {
-    // Return cached data if available and not expired
     if (_cachedRestaurants != null &&
         _lastFetchTime != null &&
         DateTime.now().difference(_lastFetchTime!) < _cacheExpiry) {

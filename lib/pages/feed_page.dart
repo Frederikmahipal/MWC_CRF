@@ -47,10 +47,7 @@ class _FeedPageState extends State<FeedPage> {
   @override
   Widget build(BuildContext context) {
     return CupertinoPageScaffold(
-      navigationBar: const CupertinoNavigationBar(
-        middle: Text('Restaurant Feed'),
-        backgroundColor: CupertinoColors.systemGroupedBackground,
-      ),
+     
       child: SafeArea(child: _buildBody()),
     );
   }

@@ -1,4 +1,5 @@
 import 'package:shared_preferences/shared_preferences.dart';
+import '../models/user.dart';
 
 class OnboardingController {
   static const String _keyOnboardingCompleted = 'onboarding_completed';
@@ -19,10 +20,19 @@ class OnboardingController {
   }) async {
     final prefs = await SharedPreferences.getInstance();
 
+    // Create user object for consistent data handling
+    final user = User.create(
+      id: userId,
+      firstName: firstName,
+      lastName: lastName,
+      avatarEmoji: avatarEmoji,
+      phoneNumber: '', // Will be set when user completes phone verification
+    );
+
     await prefs.setBool(_keyOnboardingCompleted, true);
-    await prefs.setString(_keyCurrentUserId, userId);
-    await prefs.setString(_keyUserName, '$firstName $lastName');
-    await prefs.setString(_keyUserAvatar, avatarEmoji);
+    await prefs.setString(_keyCurrentUserId, user.id);
+    await prefs.setString(_keyUserName, user.fullName);
+    await prefs.setString(_keyUserAvatar, user.avatarEmoji);
   }
 
   static Future<Map<String, String?>> getCurrentUser() async {

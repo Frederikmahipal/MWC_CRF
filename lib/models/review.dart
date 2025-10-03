@@ -40,7 +40,6 @@ class Review {
   }
 
   factory Review.fromMap(String id, Map<String, dynamic> map) {
-    // Helper function to convert Firestore Timestamp to DateTime
     DateTime _parseTimestamp(dynamic timestamp) {
       if (timestamp == null) return DateTime.now();
       if (timestamp is DateTime) return timestamp;

@@ -12,9 +12,9 @@ class MainNavigation extends StatelessWidget {
   Widget build(BuildContext context) {
     return CupertinoTabScaffold(
       tabBar: CupertinoTabBar(
-        backgroundColor: AppSettings.getBackgroundColor(context),
+        backgroundColor: AppSettings.getSurfaceColor(context),
         activeColor: AppSettings.primaryColor,
-        inactiveColor: AppSettings.secondaryColor,
+        inactiveColor: AppSettings.getSecondaryTextColor(context),
         items: const [
           BottomNavigationBarItem(
             icon: Icon(CupertinoIcons.home),
