@@ -1,8 +1,8 @@
 import 'package:flutter/cupertino.dart';
-import '../core/app_settings.dart';
-import '../models/restaurant.dart';
-import '../services/favorites_service.dart';
-import '../services/restaurant_service.dart';
+import '../../core/app_settings.dart';
+import '../../models/restaurant.dart';
+import '../../services/favorites_service.dart';
+import '../../services/restaurant_service.dart';
 import 'restaurant_main_page.dart';
 
 class FavoritesPage extends StatefulWidget {

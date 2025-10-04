@@ -1,25 +1,23 @@
 import 'package:flutter/cupertino.dart';
 
 class AppSettings {
-  static const Color primaryColor = Color(0xFFD97D55);
-  static const Color secondaryColor = Color(0xFF95A5A6); // Muted gray
-  static const Color accentColor = Color(0xFFF39C12); // Golden orange
-  static const Color successColor = Color(0xFF27AE60); // Green for success
-  static const Color warningColor = Color(0xFFF39C12); // Orange for warnings
-  static const Color errorColor = Color(0xFFE74C3C); // Red for errors
+  static const Color primaryColor = Color(0xFF2C5530);
+  static const Color secondaryColor = Color(0xFF95A5A6);
+  static const Color accentColor = Color(0xFFF39C12);
+  static const Color successColor = Color(0xFF27AE60);
+  static const Color warningColor = Color(0xFFF39C12);
+  static const Color errorColor = Color(0xFFE74C3C);
 
   static Color getBackgroundColor(BuildContext context) {
     return CupertinoTheme.brightnessOf(context) == Brightness.dark
-        ? const Color(0xFF1A1A1A) // Darker, warmer dark mode
-        : const Color(
-            0xFFFB8C4A9,
-          ); // Warm cream background that complements red
+        ? const Color(0xFF0F1419)
+        : const Color(0xFFF7F3F0);
   }
 
   static Color getSurfaceColor(BuildContext context) {
     return CupertinoTheme.brightnessOf(context) == Brightness.dark
-        ? const Color(0xFF2D2D2D) // Warmer dark surface
-        : const Color(0xFFFF4E9D7); // Light warm surface that stands out
+        ? const Color(0xFF1A2332)
+        : const Color(0xFFFEFCFB);
   }
 
   static Color getTextColor(BuildContext context) {
@@ -36,8 +34,26 @@ class AppSettings {
 
   static Color getChipColor(BuildContext context) {
     return CupertinoTheme.brightnessOf(context) == Brightness.dark
-        ? const Color(0xFF3D3D3D) // Dark chip background
-        : const Color(0xFFF1F3F4); // Light chip background
+        ? const Color(0xFF2A3441)
+        : const Color(0xFFE8E4E1);
+  }
+
+  static Color getBorderColor(BuildContext context) {
+    return CupertinoTheme.brightnessOf(context) == Brightness.dark
+        ? const Color(0xFF2A3441)
+        : const Color(0xFFE8E4E1);
+  }
+
+  static Color getPrimaryColor(BuildContext context) {
+    return CupertinoTheme.brightnessOf(context) == Brightness.dark
+        ? const Color(0xFF4A6741)
+        : primaryColor;
+  }
+
+  static Color getShadowColor(BuildContext context) {
+    return CupertinoTheme.brightnessOf(context) == Brightness.dark
+        ? const Color(0x60000000)
+        : const Color(0x1A2C5530);
   }
 
   static const String appName = 'Copenhagen Restaurant Finder';
@@ -46,13 +62,12 @@ class AppSettings {
   static const String overpassApiUrl =
       'https://overpass-api.de/api/interpreter';
   static const double defaultMapZoom = 13.0;
-  static const double defaultSearchRadius = 5.0; // km
+  static const double defaultSearchRadius = 5.0;
 
   static const double defaultPadding = 16.0;
   static const double defaultBorderRadius = 12.0;
   static const double defaultElevation = 4.0;
 
-  // TODO update when api is handled
   static const List<String> cuisineTypes = [
     'All',
     'Italian',
@@ -83,10 +98,8 @@ class AppSettings {
     'Pet Friendly',
   ];
 
-  // SharedPreferences keys
   static const String keyUsername = 'username';
   static const String keyPreferredCuisines = 'preferred_cuisines';
-  static const String keyDefaultFilters = 'default_filters';
   static const String keyLastLocation = 'last_location';
   static const String keyAppFirstLaunch = 'app_first_launch';
 }

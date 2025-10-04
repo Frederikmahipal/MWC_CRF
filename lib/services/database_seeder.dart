@@ -1,0 +1,337 @@
+import 'dart:math';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:faker/faker.dart';
+import '../models/user.dart';
+import '../models/review.dart';
+import '../repositories/remote/firestore_service.dart';
+import '../services/restaurant_service.dart';
+
+class DatabaseSeeder {
+  static final Random _random = Random();
+
+  static final List<String> _avatars = [
+    '👨',
+    '👩',
+    '👨‍💼',
+    '👩‍💼',
+    '👨‍🎓',
+    '👩‍🎓',
+    '👨‍🍳',
+    '👩‍🍳',
+    '🧑',
+    '🧑‍💻',
+    '🧑‍🎨',
+    '🧑‍🚀',
+    '👨‍🎨',
+    '👩‍🎨',
+    '👨‍🚀',
+    '👩‍🚀',
+  ];
+
+  static Future<void> seedDatabase() async {
+    print('🌱 Starting database seeding...');
+
+    try {
+      // Clear existing data first
+      await _clearExistingData();
+
+      // Seed users
+      final users = await _seedUsers();
+      print('✅ Seeded ${users.length} users');
+
+      // Seed reviews
+      await _seedReviews(users);
+      print('✅ Seeded reviews for all users');
+
+      print('🎉 Database seeding completed successfully!');
+    } catch (e) {
+      print('❌ Error seeding database: $e');
+      rethrow;
+    }
+  }
+
+  static Future<void> _clearExistingData() async {
+    print('🧹 Clearing existing data...');
+
+    // Clear users (but keep current user)
+    final usersSnapshot = await FirebaseFirestore.instance
+        .collection('users')
+        .get();
+    for (var doc in usersSnapshot.docs) {
+      // Skip deleting the current user's document
+      final currentUserId = await _getCurrentUserId();
+      if (doc.id != currentUserId) {
+        await doc.reference.delete();
+      }
+    }
+
+    // Clear reviews (but keep current user's reviews)
+    final reviewsSnapshot = await FirebaseFirestore.instance
+        .collection('reviews')
+        .get();
+    for (var doc in reviewsSnapshot.docs) {
+      final reviewData = doc.data();
+      final currentUserId = await _getCurrentUserId();
+      if (reviewData['userId'] != currentUserId) {
+        await doc.reference.delete();
+      }
+    }
+
+    print('✅ Existing data cleared (keeping your data)');
+  }
+
+  static Future<String?> _getCurrentUserId() async {
+    try {
+      // Get current user ID from SharedPreferences
+      final prefs = await SharedPreferences.getInstance();
+      return prefs.getString('current_user_id');
+    } catch (e) {
+      print('⚠️ Could not get current user ID: $e');
+      return null;
+    }
+  }
+
+  static Future<List<User>> _seedUsers() async {
+    final List<User> users = [];
+
+    for (int i = 0; i < 20; i++) {
+      // Use faker for realistic names
+      final firstName = faker.person.firstName();
+      final lastName = faker.person.lastName();
+      final phoneNumber = faker.phoneNumber.random.numberOfLength(8).toString();
+      final avatar = _avatars[_random.nextInt(_avatars.length)];
+
+      final user = User.create(
+        id: 'user_${DateTime.now().millisecondsSinceEpoch}_$i',
+        firstName: firstName,
+        lastName: lastName,
+        avatarEmoji: avatar,
+        phoneNumber: phoneNumber,
+      );
+
+      // Create user in Firestore
+      await FirestoreService.createOrUpdateUser(
+        userId: user.id,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        avatarEmoji: user.avatarEmoji,
+        phoneNumber: user.phoneNumber,
+      );
+      users.add(user);
+
+      print('👤 Created user: $firstName $lastName ($phoneNumber)');
+    }
+
+    return users;
+  }
+
+  static Future<void> _seedReviews(List<User> users) async {
+    final restaurants = await _getRestaurants();
+
+    if (restaurants.isEmpty) {
+      print('⚠️ No restaurants found, skipping review seeding');
+      return;
+    }
+
+    // First, ensure each restaurant gets at least 2 reviews
+    for (int i = 0; i < restaurants.length; i++) {
+      final restaurant = restaurants[i];
+
+      // Assign 2 reviews per restaurant
+      for (int j = 0; j < 2; j++) {
+        final user = users[_random.nextInt(users.length)];
+        final rating = _generateRating();
+        final comment = _generateReviewComment(rating);
+
+        final review = Review(
+          id: 'review_${DateTime.now().millisecondsSinceEpoch}_${restaurant.id}_$j',
+          restaurantId: restaurant.id,
+          restaurantName: restaurant.name,
+          userId: user.id,
+          userName: '${user.firstName} ${user.lastName}',
+          userAvatar: user.avatarEmoji,
+          rating: rating,
+          comment: comment,
+          createdAt: DateTime.now().subtract(
+            Duration(days: _random.nextInt(180)),
+          ),
+          updatedAt: DateTime.now().subtract(
+            Duration(days: _random.nextInt(180)),
+          ),
+        );
+
+        // Create review in Firestore
+        await FirebaseFirestore.instance
+            .collection('reviews')
+            .add(review.toMap());
+
+        print(
+          '⭐ Created review by ${user.firstName}: $rating stars for ${restaurant.name}',
+        );
+      }
+    }
+
+    // Then add additional random reviews for variety
+    for (final user in users) {
+      // Each user writes 1-3 additional reviews
+      final numAdditionalReviews = 1 + _random.nextInt(3);
+
+      for (int i = 0; i < numAdditionalReviews; i++) {
+        final restaurant = restaurants[_random.nextInt(restaurants.length)];
+        final rating = _generateRating();
+        final comment = _generateReviewComment(rating);
+
+        final review = Review(
+          id: 'review_${DateTime.now().millisecondsSinceEpoch}_${user.id}_$i',
+          restaurantId: restaurant.id,
+          restaurantName: restaurant.name,
+          userId: user.id,
+          userName: '${user.firstName} ${user.lastName}',
+          userAvatar: user.avatarEmoji,
+          rating: rating,
+          comment: comment,
+          createdAt: DateTime.now().subtract(
+            Duration(days: _random.nextInt(180)),
+          ),
+          updatedAt: DateTime.now().subtract(
+            Duration(days: _random.nextInt(180)),
+          ),
+        );
+
+        // Create review in Firestore
+        await FirebaseFirestore.instance
+            .collection('reviews')
+            .add(review.toMap());
+
+        print(
+          '⭐ Created additional review by ${user.firstName}: $rating stars for ${restaurant.name}',
+        );
+      }
+    }
+  }
+
+  static Future<List<dynamic>> _getRestaurants() async {
+    // Get restaurants from your cached data (no API call)
+    try {
+      final restaurantService = RestaurantService();
+      // Get cached restaurants without API call
+      final restaurants = restaurantService.getCachedRestaurants();
+      if (restaurants != null) {
+        print('🍽️ Found ${restaurants.length} cached restaurants');
+        return restaurants;
+      } else {
+        print('⚠️ No cached restaurants found, trying to load...');
+        // If no cache, load restaurants once
+        final loadedRestaurants = await restaurantService.getAllRestaurants();
+        print('🍽️ Loaded ${loadedRestaurants.length} restaurants');
+        return loadedRestaurants;
+      }
+    } catch (e) {
+      print('⚠️ Could not load restaurants: $e');
+      // Fallback to empty list if no restaurants found
+      return [];
+    }
+  }
+
+  static int _generateRating() {
+    // Weighted towards positive ratings (3-5 stars)
+    final weights = [0.1, 0.1, 0.2, 0.3, 0.3]; // 1,2,3,4,5 stars
+    final random = _random.nextDouble();
+
+    if (random < weights[0]) return 1;
+    if (random < weights[0] + weights[1]) return 2;
+    if (random < weights[0] + weights[1] + weights[2]) return 3;
+    if (random < weights[0] + weights[1] + weights[2] + weights[3]) return 4;
+    return 5;
+  }
+
+  static String _generateReviewComment(int rating) {
+    // Randomly choose between Danish and English (70% Danish, 30% English)
+    final isDanish = _random.nextDouble() < 0.7;
+
+    if (isDanish) {
+      return _generateDanishReview(rating);
+    } else {
+      return _generateEnglishReview(rating);
+    }
+  }
+
+  static String _generateDanishReview(int rating) {
+    final positiveComments = [
+      "Fantastisk mad og service!",
+      "Rigtig god oplevelse, kan varmt anbefales.",
+      "Perfekt til en særlig aften.",
+      "Utrolig lækker mad og hyggelig stemning.",
+      "Bedste restaurant i byen!",
+      "Fantastisk smag og præsentation.",
+      "Kan kun anbefales - fantastisk!",
+      "Rigtig god kvalitet og service.",
+      "Perfekt til en romantisk aften.",
+      "Utrolig god oplevelse, kommer gerne igen.",
+    ];
+
+    final neutralComments = [
+      "Okay oplevelse, intet særligt.",
+      "Middelmådig mad og service.",
+      "Ikke dårligt, men heller ikke fantastisk.",
+      "Acceptabel kvalitet.",
+      "Gennemsnitlig oplevelse.",
+    ];
+
+    final negativeComments = [
+      "Skuffende oplevelse, forventede mere.",
+      "Ikke imponeret over kvaliteten.",
+      "For dyrt for hvad man får.",
+      "Service kunne være bedre.",
+      "Mad var ikke som forventet.",
+    ];
+
+    if (rating >= 4) {
+      return positiveComments[_random.nextInt(positiveComments.length)];
+    } else if (rating == 3) {
+      return neutralComments[_random.nextInt(neutralComments.length)];
+    } else {
+      return negativeComments[_random.nextInt(negativeComments.length)];
+    }
+  }
+
+  static String _generateEnglishReview(int rating) {
+    final positiveComments = [
+      "Amazing food and service!",
+      "Really great experience, highly recommended.",
+      "Perfect for a special evening.",
+      "Incredibly delicious food and cozy atmosphere.",
+      "Best restaurant in town!",
+      "Fantastic taste and presentation.",
+      "Can only recommend - fantastic!",
+      "Really good quality and service.",
+      "Perfect for a romantic evening.",
+      "Incredible experience, will definitely come back.",
+    ];
+
+    final neutralComments = [
+      "Okay experience, nothing special.",
+      "Average food and service.",
+      "Not bad, but not fantastic either.",
+      "Acceptable quality.",
+      "Average experience.",
+    ];
+
+    final negativeComments = [
+      "Disappointing experience, expected more.",
+      "Not impressed with the quality.",
+      "Too expensive for what you get.",
+      "Service could be better.",
+      "Food wasn't as expected.",
+    ];
+
+    if (rating >= 4) {
+      return positiveComments[_random.nextInt(positiveComments.length)];
+    } else if (rating == 3) {
+      return neutralComments[_random.nextInt(neutralComments.length)];
+    } else {
+      return negativeComments[_random.nextInt(negativeComments.length)];
+    }
+  }
+}

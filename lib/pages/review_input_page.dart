@@ -55,14 +55,12 @@ class _ReviewInputPageState extends State<ReviewInputPage> {
 
     try {
       if (widget.reviewId != null) {
-        // Update existing review
         await ReviewService.updateReview(
           reviewId: widget.reviewId!,
           rating: _selectedRating,
           comment: _commentController.text.trim(),
         );
       } else {
-        // Add new review
         await ReviewService.addReview(
           restaurantId: widget.restaurantId,
           restaurantName: widget.restaurantName,
@@ -72,7 +70,7 @@ class _ReviewInputPageState extends State<ReviewInputPage> {
       }
 
       if (mounted) {
-        Navigator.of(context).pop(true); // return true for success
+        Navigator.of(context).pop(true);
       }
     } catch (e) {
       if (mounted) {

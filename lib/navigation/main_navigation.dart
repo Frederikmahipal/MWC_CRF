@@ -1,9 +1,10 @@
 import 'package:flutter/cupertino.dart';
-import '../pages/feed_page.dart';
+import '../pages/restaurants/feed_page.dart';
 import '../pages/search_page.dart';
 import '../pages/notifications_page.dart';
-import '../pages/profile_page.dart';
+import '../pages/profile/profile_page.dart';
 import '../core/app_settings.dart';
+import '../services/auth_service.dart';
 
 class MainNavigation extends StatelessWidget {
   const MainNavigation({super.key});

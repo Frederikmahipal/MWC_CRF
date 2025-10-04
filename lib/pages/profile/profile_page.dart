@@ -1,14 +1,17 @@
+import 'package:crf/pages/onboarding/pin_login_page.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:crf/services/user_detection_service.dart';
-import '../core/app_settings.dart';
-import '../core/onboarding_controller.dart';
-import '../services/favorites_service.dart';
-import '../services/review_service.dart';
-import 'onboarding/welcome_page.dart';
-import 'preferences_page.dart';
-import 'favorites_page.dart';
-import 'my_reviews_page.dart';
+import '../../core/app_settings.dart';
+import '../../core/onboarding_controller.dart';
+import '../../services/favorites_service.dart';
+import '../../services/review_service.dart';
+import '../../services/auth_service.dart';
+import '../../services/pin_auth_service.dart';
+import '../../pages/onboarding/welcome_page.dart';
+import '../../pages/preferences_page.dart';
+import '../restaurants/favorites_page.dart';
+import '../../pages/my_reviews_page.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -292,8 +295,16 @@ class _ProfilePageState extends State<ProfilePage> with RouteAware {
 
   void _logout() async {
     try {
+      // Clear AuthService (clears user data and session)
+      await AuthService.logout();
+
+      // Clear PIN and biometric data
+      await PinAuthService.clearAllAuthData();
+
+      // Clear Firebase auth
       await FirebaseAuth.instance.signOut();
 
+      // Reset onboarding state
       await OnboardingController.resetOnboarding();
 
       if (mounted) {

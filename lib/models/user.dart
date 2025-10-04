@@ -8,6 +8,9 @@ class User {
   final String phoneNumber;
   final DateTime createdAt;
   final DateTime updatedAt;
+  final String? pinHash;
+  final String? pinSalt;
+  final bool biometricEnabled;
 
   User({
     required this.id,
@@ -17,6 +20,9 @@ class User {
     required this.phoneNumber,
     required this.createdAt,
     required this.updatedAt,
+    this.pinHash,
+    this.pinSalt,
+    this.biometricEnabled = false,
   });
 
   // Getter for full name
@@ -32,6 +38,9 @@ class User {
       phoneNumber: data['phoneNumber'] ?? '',
       createdAt: (data['createdAt'] as Timestamp).toDate(),
       updatedAt: (data['updatedAt'] as Timestamp).toDate(),
+      pinHash: data['pinHash'],
+      pinSalt: data['pinSalt'],
+      biometricEnabled: data['biometricEnabled'] ?? false,
     );
   }
 
@@ -44,6 +53,9 @@ class User {
       'phoneNumber': phoneNumber,
       'createdAt': createdAt,
       'updatedAt': updatedAt,
+      'pinHash': pinHash,
+      'pinSalt': pinSalt,
+      'biometricEnabled': biometricEnabled,
     };
   }
 
@@ -54,6 +66,9 @@ class User {
     required String lastName,
     required String avatarEmoji,
     required String phoneNumber,
+    String? pinHash,
+    String? pinSalt,
+    bool biometricEnabled = false,
   }) {
     final now = DateTime.now();
     return User(
@@ -64,6 +79,9 @@ class User {
       phoneNumber: phoneNumber,
       createdAt: now,
       updatedAt: now,
+      pinHash: pinHash,
+      pinSalt: pinSalt,
+      biometricEnabled: biometricEnabled,
     );
   }
 
@@ -76,6 +94,9 @@ class User {
     String? phoneNumber,
     DateTime? createdAt,
     DateTime? updatedAt,
+    String? pinHash,
+    String? pinSalt,
+    bool? biometricEnabled,
   }) {
     return User(
       id: id ?? this.id,
@@ -85,6 +106,9 @@ class User {
       phoneNumber: phoneNumber ?? this.phoneNumber,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
+      pinHash: pinHash ?? this.pinHash,
+      pinSalt: pinSalt ?? this.pinSalt,
+      biometricEnabled: biometricEnabled ?? this.biometricEnabled,
     );
   }
 

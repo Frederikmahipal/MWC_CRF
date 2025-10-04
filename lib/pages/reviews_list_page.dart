@@ -3,6 +3,7 @@ import '../models/review.dart';
 import '../services/review_service.dart';
 import 'review_input_page.dart';
 import 'package:timeago/timeago.dart' as timeago;
+import '../core/app_settings.dart';
 
 class ReviewsListPage extends StatefulWidget {
   final String restaurantId;
@@ -44,7 +45,6 @@ class _ReviewsListPageState extends State<ReviewsListPage> {
 
       if (mounted) {
         setState(() {
-          // Filter out users own review from the main list
           _reviews = reviews
               .where((review) => review.id != userReview?.id)
               .toList();
@@ -89,7 +89,7 @@ class _ReviewsListPageState extends State<ReviewsListPage> {
     );
 
     if (result == true) {
-      _loadReviews(); 
+      _loadReviews();
     }
   }
 
@@ -109,7 +109,7 @@ class _ReviewsListPageState extends State<ReviewsListPage> {
     );
 
     if (result == true) {
-      _loadReviews(); 
+      _loadReviews();
     }
   }
 
@@ -161,90 +161,12 @@ class _ReviewsListPageState extends State<ReviewsListPage> {
             ? const Center(child: CupertinoActivityIndicator())
             : CustomScrollView(
                 slivers: [
-                  // User's review section
-                  if (_userReview != null)
-                    SliverToBoxAdapter(
-                      child: Container(
-                        margin: const EdgeInsets.all(16),
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: CupertinoColors.systemBlue.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(
-                            color: CupertinoColors.systemBlue.withOpacity(0.3),
-                          ),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                Text(
-                                  _userReview!.userAvatar,
-                                  style: const TextStyle(fontSize: 24),
-                                ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        _userReview!.userName,
-                                        style: CupertinoTheme.of(context)
-                                            .textTheme
-                                            .textStyle
-                                            .copyWith(
-                                              fontWeight: FontWeight.bold,
-                                            ),
-                                      ),
-                                      Text(
-                                        'Your Review',
-                                        style: CupertinoTheme.of(context)
-                                            .textTheme
-                                            .textStyle
-                                            .copyWith(
-                                              color: CupertinoColors.systemBlue,
-                                              fontSize: 12,
-                                            ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                Row(
-                                  children: [
-                                    CupertinoButton(
-                                      padding: EdgeInsets.zero,
-                                      child: const Text('Edit'),
-                                      onPressed: _editReview,
-                                    ),
-                                    CupertinoButton(
-                                      padding: EdgeInsets.zero,
-                                      child: const Text('Delete'),
-                                      onPressed: _deleteReview,
-                                    ),
-                                  ],
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 12),
-                            Row(
-                              children: List.generate(5, (index) {
-                                return Text(
-                                  index < _userReview!.rating ? '⭐' : '☆',
-                                  style: const TextStyle(fontSize: 16),
-                                );
-                              }),
-                            ),
-                            const SizedBox(height: 8),
-                            Text(_userReview!.comment),
-                          ],
-                        ),
-                      ),
-                    ),
                   SliverList(
                     delegate: SliverChildBuilderDelegate((context, index) {
                       final review = _reviews[index];
+                      final isUserReview =
+                          _userReview != null && review.id == _userReview!.id;
+
                       return Container(
                         margin: const EdgeInsets.symmetric(
                           horizontal: 16,
@@ -252,8 +174,24 @@ class _ReviewsListPageState extends State<ReviewsListPage> {
                         ),
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          color: CupertinoColors.systemGrey6,
+                          color: isUserReview
+                              ? AppSettings.primaryColor.withOpacity(0.1)
+                              : AppSettings.getSurfaceColor(context),
                           borderRadius: BorderRadius.circular(12),
+                          border: isUserReview
+                              ? Border.all(
+                                  color: AppSettings.primaryColor.withOpacity(
+                                    0.3,
+                                  ),
+                                )
+                              : null,
+                          boxShadow: [
+                            BoxShadow(
+                              color: AppSettings.getShadowColor(context),
+                              blurRadius: 2,
+                              offset: const Offset(0, 1),
+                            ),
+                          ],
                         ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -280,26 +218,45 @@ class _ReviewsListPageState extends State<ReviewsListPage> {
                                             ),
                                       ),
                                       Text(
-                                        timeago.format(review.createdAt),
+                                        isUserReview
+                                            ? 'Your Review'
+                                            : timeago.format(review.createdAt),
                                         style: CupertinoTheme.of(context)
                                             .textTheme
                                             .textStyle
                                             .copyWith(
-                                              color: CupertinoColors.systemGrey,
+                                              color: isUserReview
+                                                  ? AppSettings.primaryColor
+                                                  : CupertinoColors.systemGrey,
                                               fontSize: 12,
                                             ),
                                       ),
                                     ],
                                   ),
                                 ),
+                                if (isUserReview)
+                                  Row(
+                                    children: [
+                                      CupertinoButton(
+                                        padding: EdgeInsets.zero,
+                                        child: const Text('Edit'),
+                                        onPressed: _editReview,
+                                      ),
+                                      CupertinoButton(
+                                        padding: EdgeInsets.zero,
+                                        child: const Text('Delete'),
+                                        onPressed: _deleteReview,
+                                      ),
+                                    ],
+                                  ),
                               ],
                             ),
                             const SizedBox(height: 12),
                             Row(
-                              children: List.generate(5, (index) {
-                                return Text(
-                                  index < review.rating ? '⭐' : '☆',
-                                  style: const TextStyle(fontSize: 16),
+                              children: List.generate(review.rating, (index) {
+                                return const Text(
+                                  '⭐',
+                                  style: TextStyle(fontSize: 16),
                                 );
                               }),
                             ),

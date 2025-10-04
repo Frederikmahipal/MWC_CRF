@@ -2,6 +2,7 @@ import 'package:flutter/cupertino.dart';
 import '../../core/onboarding_controller.dart';
 import '../../navigation/main_navigation.dart';
 import '../../repositories/remote/firestore_service.dart';
+import 'pin_setup_page.dart';
 
 class AvatarSelectionPage extends StatefulWidget {
   final String firstName;
@@ -125,8 +126,6 @@ class _AvatarSelectionPageState extends State<AvatarSelectionPage> {
               ),
 
               const SizedBox(height: 20),
-
-              // Complete button
               SizedBox(
                 width: double.infinity,
                 child: CupertinoButton(
@@ -191,10 +190,9 @@ class _AvatarSelectionPageState extends State<AvatarSelectionPage> {
                 child: const Text('Get Started'),
                 onPressed: () {
                   Navigator.of(context).pop();
-                  // Navigate to main app
                   Navigator.of(context).pushAndRemoveUntil(
                     CupertinoPageRoute(
-                      builder: (context) => const MainNavigation(),
+                      builder: (context) => const PinSetupPage(),
                     ),
                     (route) => false,
                   );

@@ -4,7 +4,7 @@ import 'package:latlong2/latlong.dart';
 import '../core/app_settings.dart';
 import '../services/restaurant_service.dart';
 import '../models/restaurant.dart';
-import 'restaurant_main_page.dart';
+import 'restaurants/restaurant_main_page.dart';
 
 class SearchPage extends StatefulWidget {
   const SearchPage({super.key});
@@ -32,6 +32,7 @@ class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
       duration: const Duration(milliseconds: 300),
       vsync: this,
     );
+
     _loadRestaurants();
   }
 
@@ -46,7 +47,6 @@ class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
     try {
       final restaurants = await _restaurantService.getAllRestaurants();
 
-      // Debug: Print some sample cuisine data
       if (restaurants.isNotEmpty) {
         print('🍽️ Sample restaurant cuisines:');
         for (int i = 0; i < 5 && i < restaurants.length; i++) {
@@ -71,7 +71,6 @@ class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
 
     setState(() {
       _filteredRestaurants = _allRestaurants.where((restaurant) {
-        // Search by name, cuisine, or neighborhood
         bool matchesSearch =
             query.isEmpty ||
             restaurant.name.toLowerCase().contains(query) ||
@@ -80,7 +79,6 @@ class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
             ) ||
             (restaurant.neighborhood?.toLowerCase().contains(query) ?? false);
 
-        // Filter by selected cuisines (case-insensitive matching)
         bool matchesCuisine =
             _selectedCuisines.isEmpty ||
             restaurant.cuisines.any((restaurantCuisine) {
@@ -132,25 +130,39 @@ class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
   }
 
   Widget _buildMainContent() {
-    if (_isMapExpanded) {
-      return _buildExpandedMap();
-    }
-
-    return SafeArea(
-      child: Column(
-        children: [
-          _buildSearchSection(),
-          _buildCuisineFilters(),
-          Expanded(
-            child: Row(
-              children: [
-                Expanded(flex: 1, child: _buildMiniMap()),
-                Expanded(flex: 1, child: _buildResultsList()),
-              ],
+    return AnimatedSwitcher(
+      duration: const Duration(milliseconds: 400),
+      transitionBuilder: (Widget child, Animation<double> animation) {
+        return ScaleTransition(
+          scale:
+              Tween<double>(
+                begin: 0.0, 
+                end: 1.0, 
+              ).animate(
+                CurvedAnimation(parent: animation, curve: Curves.easeInOut),
+              ),
+          child: FadeTransition(opacity: animation, child: child),
+        );
+      },
+      child: _isMapExpanded
+          ? _buildExpandedMap()
+          : SafeArea(
+              key: const ValueKey('normal'),
+              child: Column(
+                children: [
+                  _buildSearchSection(),
+                  _buildCuisineFilters(),
+                  Expanded(
+                    child: Row(
+                      children: [
+                        Expanded(flex: 1, child: _buildMiniMap()),
+                        Expanded(flex: 1, child: _buildResultsList()),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
-        ],
-      ),
     );
   }
 
@@ -209,12 +221,10 @@ class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
   Widget _buildMiniMap() {
     final isDark = CupertinoTheme.brightnessOf(context) == Brightness.dark;
 
-    return Container(
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 300),
       margin: const EdgeInsets.all(8),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: CupertinoColors.systemGrey4),
-      ),
+      decoration: BoxDecoration(borderRadius: BorderRadius.circular(12)),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(12),
         child: Stack(
@@ -265,6 +275,7 @@ class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
     final isDark = CupertinoTheme.brightnessOf(context) == Brightness.dark;
 
     return Stack(
+      key: const ValueKey('expanded'),
       children: [
         FlutterMap(
           options: MapOptions(
@@ -284,9 +295,8 @@ class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
             MarkerLayer(markers: _buildFilteredMarkers()),
           ],
         ),
-        // Close button overlay
         Positioned(
-          top: 50, // Safe area top
+          top: 50, 
           right: 16,
           child: CupertinoButton(
             padding: const EdgeInsets.all(12),

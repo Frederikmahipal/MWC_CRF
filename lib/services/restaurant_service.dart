@@ -12,9 +12,7 @@ class RestaurantService {
 
   List<Restaurant>? _cachedRestaurants;
   DateTime? _lastFetchTime;
-  static const Duration _cacheExpiry = Duration(
-    hours: 6,
-  ); 
+  static const Duration _cacheExpiry = Duration(hours: 6);
 
   Future<List<Restaurant>> getAllRestaurants() async {
     if (_cachedRestaurants != null &&
@@ -31,7 +29,6 @@ class RestaurantService {
       _lastFetchTime = DateTime.now();
       return _cachedRestaurants!;
     } catch (e) {
-
       if (_cachedRestaurants != null) {
         return _cachedRestaurants!;
       }
@@ -147,14 +144,17 @@ class RestaurantService {
     _lastFetchTime = null;
   }
 
-// Calculate distance between two points in kilometers
+  List<Restaurant>? getCachedRestaurants() {
+    return _cachedRestaurants;
+  }
+
   double _calculateDistance(
     double lat1,
     double lon1,
     double lat2,
     double lon2,
   ) {
-    const double earthRadius = 6371; // Earth's radius in kilometers
+    const double earthRadius = 6371; // Earths radius in kilometers
 
     final dLat = _degreesToRadians(lat2 - lat1);
     final dLon = _degreesToRadians(lon2 - lon1);

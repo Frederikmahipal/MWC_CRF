@@ -190,4 +190,70 @@ class FirestoreService {
         .doc(notificationId)
         .update({'read': true});
   }
+
+  static Future<void> updateUserAuth({
+    required String userId,
+    required String pinHash,
+    required String salt,
+  }) async {
+    try {
+      await _firestore.collection(_usersCollection).doc(userId).update({
+        'pinHash': pinHash,
+        'pinSalt': salt,
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+    } catch (e) {
+      print('Error updating user auth: $e');
+      rethrow;
+    }
+  }
+
+  static Future<void> updateUserBiometric({
+    required String userId,
+    required bool biometricEnabled,
+  }) async {
+    try {
+      await _firestore.collection(_usersCollection).doc(userId).update({
+        'biometricEnabled': biometricEnabled,
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+    } catch (e) {
+      print('Error updating user biometric: $e');
+      rethrow;
+    }
+  }
+
+  static Future<Map<String, dynamic>?> getUserAuth(String userId) async {
+    try {
+      final doc = await _firestore
+          .collection(_usersCollection)
+          .doc(userId)
+          .get();
+      if (doc.exists) {
+        final data = doc.data()!;
+        return {
+          'pinHash': data['pinHash'],
+          'pinSalt': data['pinSalt'],
+          'biometricEnabled': data['biometricEnabled'] ?? false,
+        };
+      }
+      return null;
+    } catch (e) {
+      print('Error getting user auth: $e');
+      return null;
+    }
+  }
+
+  static Future<bool> validateUserPin(String userId, String pinHash) async {
+    try {
+      final authData = await getUserAuth(userId);
+      if (authData == null) return false;
+
+      final storedHash = authData['pinHash'] as String?;
+      return storedHash == pinHash;
+    } catch (e) {
+      print('Error validating user PIN: $e');
+      return false;
+    }
+  }
 }

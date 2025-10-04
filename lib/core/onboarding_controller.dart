@@ -20,19 +20,28 @@ class OnboardingController {
   }) async {
     final prefs = await SharedPreferences.getInstance();
 
-    // Create user object for consistent data handling
     final user = User.create(
       id: userId,
       firstName: firstName,
       lastName: lastName,
       avatarEmoji: avatarEmoji,
-      phoneNumber: '', // Will be set when user completes phone verification
+      phoneNumber: '',
     );
 
     await prefs.setBool(_keyOnboardingCompleted, true);
     await prefs.setString(_keyCurrentUserId, user.id);
     await prefs.setString(_keyUserName, user.fullName);
     await prefs.setString(_keyUserAvatar, user.avatarEmoji);
+  }
+
+  static Future<void> completePinSetup() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('pin_setup_completed', true);
+  }
+
+  static Future<bool> isPinSetupCompleted() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool('pin_setup_completed') ?? false;
   }
 
   static Future<Map<String, String?>> getCurrentUser() async {

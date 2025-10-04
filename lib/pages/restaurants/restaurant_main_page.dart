@@ -1,16 +1,16 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_map/flutter_map.dart';
-import '../models/restaurant.dart';
-import '../core/app_settings.dart';
-import '../services/restaurant_service.dart';
-import '../services/favorites_service.dart';
-import '../services/review_service.dart';
-import '../models/review.dart';
+import '../../models/restaurant.dart';
+import '../../core/app_settings.dart';
+import '../../services/restaurant_service.dart';
+import '../../services/favorites_service.dart';
+import '../../services/review_service.dart';
+import '../../models/review.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter/material.dart';
 import 'package:timeago/timeago.dart' as timeago;
-import 'reviews_list_page.dart';
-import 'review_input_page.dart';
+import '../../pages/reviews_list_page.dart';
+import '../../pages/review_input_page.dart';
 
 class RestaurantMainPage extends StatefulWidget {
   final Restaurant restaurant;
@@ -84,7 +84,7 @@ class _RestaurantMainPageState extends State<RestaurantMainPage> {
       );
       if (mounted) {
         setState(() {
-          _reviews = reviews.take(2).toList(); // Only show latest 2 reviews
+          _reviews = reviews.take(2).toList();
           _isLoadingReviews = false;
         });
       }
@@ -128,7 +128,6 @@ class _RestaurantMainPageState extends State<RestaurantMainPage> {
       }
     } catch (e) {
       print('Error toggling favorite: $e');
-      // Show error message to user
       if (mounted) {
         showCupertinoDialog(
           context: context,
@@ -675,8 +674,15 @@ class _RestaurantMainPageState extends State<RestaurantMainPage> {
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: CupertinoColors.systemGrey6,
+        color: AppSettings.getChipColor(context),
         borderRadius: BorderRadius.circular(8),
+        boxShadow: [
+          BoxShadow(
+            color: AppSettings.getShadowColor(context),
+            blurRadius: 2,
+            offset: const Offset(0, 1),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -709,16 +715,8 @@ class _RestaurantMainPageState extends State<RestaurantMainPage> {
           ),
           const SizedBox(height: 8),
           Row(
-            children: List.generate(5, (index) {
-              return Text(
-                index < review.rating ? '⭐' : '☆',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: index < review.rating
-                      ? AppSettings.accentColor
-                      : AppSettings.getSecondaryTextColor(context),
-                ),
-              );
+            children: List.generate(review.rating, (index) {
+              return const Text('⭐', style: TextStyle(fontSize: 14));
             }),
           ),
           const SizedBox(height: 8),
