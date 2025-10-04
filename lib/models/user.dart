@@ -25,10 +25,8 @@ class User {
     this.biometricEnabled = false,
   });
 
-  // Getter for full name
   String get fullName => '$firstName $lastName';
 
-  // Factory constructor to create a User from a Firestore document
   factory User.fromMap(Map<String, dynamic> data, String id) {
     return User(
       id: id,
@@ -44,7 +42,6 @@ class User {
     );
   }
 
-  // Method to convert a User object to a Map for Firestore
   Map<String, dynamic> toMap() {
     return {
       'firstName': firstName,
@@ -59,7 +56,6 @@ class User {
     };
   }
 
-  // Factory constructor for creating a new user (with server timestamps)
   factory User.create({
     required String id,
     required String firstName,
@@ -85,7 +81,6 @@ class User {
     );
   }
 
-  // Method to create a copy with updated fields
   User copyWith({
     String? id,
     String? firstName,

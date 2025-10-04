@@ -95,7 +95,7 @@ class DatabaseSeeder {
   static Future<List<User>> _seedUsers() async {
     final List<User> users = [];
 
-    for (int i = 0; i < 20; i++) {
+    for (int i = 0; i < 50; i++) {
       // Use faker for realistic names
       final firstName = faker.person.firstName();
       final lastName = faker.person.lastName();
@@ -134,12 +134,12 @@ class DatabaseSeeder {
       return;
     }
 
-    // First, ensure each restaurant gets at least 2 reviews
+    // First, ensure each restaurant gets at least 5 reviews
     for (int i = 0; i < restaurants.length; i++) {
       final restaurant = restaurants[i];
 
-      // Assign 2 reviews per restaurant
-      for (int j = 0; j < 2; j++) {
+      // Assign 5 reviews per restaurant
+      for (int j = 0; j < 5; j++) {
         final user = users[_random.nextInt(users.length)];
         final rating = _generateRating();
         final comment = _generateReviewComment(rating);
@@ -174,8 +174,8 @@ class DatabaseSeeder {
 
     // Then add additional random reviews for variety
     for (final user in users) {
-      // Each user writes 1-3 additional reviews
-      final numAdditionalReviews = 1 + _random.nextInt(3);
+      // Each user writes 3-8 additional reviews
+      final numAdditionalReviews = 3 + _random.nextInt(6);
 
       for (int i = 0; i < numAdditionalReviews; i++) {
         final restaurant = restaurants[_random.nextInt(restaurants.length)];
@@ -269,6 +269,21 @@ class DatabaseSeeder {
       "Rigtig god kvalitet og service.",
       "Perfekt til en romantisk aften.",
       "Utrolig god oplevelse, kommer gerne igen.",
+      "Fremragende mad og hyggelig atmosfære.",
+      "Kan varmt anbefales - fantastisk kvalitet!",
+      "Perfekt til en date eller særlig begivenhed.",
+      "Utrolig lækker mad og professionel service.",
+      "Bedste restaurant jeg har besøgt i lang tid!",
+      "Fantastisk oplevelse, kommer helt sikkert igen.",
+      "Rigtig god mad og hyggelig stemning.",
+      "Perfekt til en romantisk aften for to.",
+      "Utrolig god kvalitet og smag.",
+      "Kan kun anbefales - fantastisk oplevelse!",
+      "Fremragende service og lækker mad.",
+      "Perfekt til en særlig aften med familien.",
+      "Utrolig god oplevelse, kan varmt anbefales.",
+      "Bedste restaurant i området!",
+      "Fantastisk mad og hyggelig atmosfære.",
     ];
 
     final neutralComments = [
@@ -277,6 +292,11 @@ class DatabaseSeeder {
       "Ikke dårligt, men heller ikke fantastisk.",
       "Acceptabel kvalitet.",
       "Gennemsnitlig oplevelse.",
+      "Ikke imponerende, men heller ikke dårligt.",
+      "Middelmådig oplevelse.",
+      "Acceptabelt, men intet særligt.",
+      "Gennemsnitlig kvalitet og service.",
+      "Ikke fantastisk, men heller ikke skuffende.",
     ];
 
     final negativeComments = [
@@ -285,6 +305,16 @@ class DatabaseSeeder {
       "For dyrt for hvad man får.",
       "Service kunne være bedre.",
       "Mad var ikke som forventet.",
+      "Ikke værd at besøge igen.",
+      "Skuffende kvalitet og service.",
+      "For dyrt for den kvalitet man får.",
+      "Service var langsom og uvenlig.",
+      "Mad var kold og smagløs.",
+      "Ikke imponerende oplevelse.",
+      "Forventede mere for prisen.",
+      "Service kunne være meget bedre.",
+      "Mad var ikke som beskrevet.",
+      "Skuffende oplevelse overordnet.",
     ];
 
     if (rating >= 4) {
@@ -308,6 +338,21 @@ class DatabaseSeeder {
       "Really good quality and service.",
       "Perfect for a romantic evening.",
       "Incredible experience, will definitely come back.",
+      "Excellent food and wonderful atmosphere.",
+      "Highly recommended - fantastic quality!",
+      "Perfect for a date or special occasion.",
+      "Incredibly delicious food and professional service.",
+      "Best restaurant I've visited in a long time!",
+      "Fantastic experience, will definitely return.",
+      "Really good food and cozy atmosphere.",
+      "Perfect for a romantic evening for two.",
+      "Incredibly good quality and taste.",
+      "Can only recommend - fantastic experience!",
+      "Excellent service and delicious food.",
+      "Perfect for a special evening with family.",
+      "Incredibly good experience, highly recommended.",
+      "Best restaurant in the area!",
+      "Fantastic food and cozy atmosphere.",
     ];
 
     final neutralComments = [
@@ -316,6 +361,11 @@ class DatabaseSeeder {
       "Not bad, but not fantastic either.",
       "Acceptable quality.",
       "Average experience.",
+      "Not impressive, but not bad either.",
+      "Average experience.",
+      "Acceptable, but nothing special.",
+      "Average quality and service.",
+      "Not fantastic, but not disappointing either.",
     ];
 
     final negativeComments = [
@@ -324,6 +374,16 @@ class DatabaseSeeder {
       "Too expensive for what you get.",
       "Service could be better.",
       "Food wasn't as expected.",
+      "Not worth visiting again.",
+      "Disappointing quality and service.",
+      "Too expensive for the quality you get.",
+      "Service was slow and unfriendly.",
+      "Food was cold and tasteless.",
+      "Not impressive experience.",
+      "Expected more for the price.",
+      "Service could be much better.",
+      "Food wasn't as described.",
+      "Disappointing experience overall.",
     ];
 
     if (rating >= 4) {

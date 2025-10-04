@@ -1,6 +1,7 @@
 import 'dart:math';
 import '../models/restaurant.dart';
 import 'overpass_service.dart';
+import 'review_service.dart';
 import 'package:geocoding/geocoding.dart';
 
 class RestaurantService {
@@ -211,5 +212,55 @@ class RestaurantService {
     } catch (e) {
       return '${lat.toStringAsFixed(4)}, ${lon.toStringAsFixed(4)}';
     }
+  }
+
+  // Get restaurants with their average ratings
+  Future<List<Restaurant>> getAllRestaurantsWithRatings() async {
+    final restaurants = await getAllRestaurants();
+    final restaurantsWithRatings = <Restaurant>[];
+
+    for (final restaurant in restaurants) {
+      try {
+        final ratingSummary = await ReviewService.getRestaurantRatingSummary(
+          restaurant.id,
+        );
+        final updatedRestaurant = restaurant.copyWith(
+          averageRating: ratingSummary['averageRating'] as double,
+          totalReviews: ratingSummary['totalReviews'] as int,
+        );
+        restaurantsWithRatings.add(updatedRestaurant);
+      } catch (e) {
+        // If rating calculation fails, use the original restaurant
+        restaurantsWithRatings.add(restaurant);
+      }
+    }
+
+    return restaurantsWithRatings;
+  }
+
+  // Get restaurants with ratings for AI recommendations (optimized)
+  Future<List<Restaurant>> getRestaurantsForAI() async {
+    final restaurants = await getAllRestaurants();
+    final restaurantsWithRatings = <Restaurant>[];
+
+    // Limit to first 50 restaurants for AI to avoid token limits
+    final limitedRestaurants = restaurants.take(50).toList();
+
+    for (final restaurant in limitedRestaurants) {
+      try {
+        final averageRating = await ReviewService.getRestaurantAverageRating(
+          restaurant.id,
+        );
+        final updatedRestaurant = restaurant.copyWith(
+          averageRating: averageRating,
+        );
+        restaurantsWithRatings.add(updatedRestaurant);
+      } catch (e) {
+        // If rating calculation fails, use the original restaurant
+        restaurantsWithRatings.add(restaurant);
+      }
+    }
+
+    return restaurantsWithRatings;
   }
 }

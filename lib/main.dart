@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'core/app_settings.dart';
 import 'core/app_state.dart';
 import 'core/theme_controller.dart';
@@ -15,11 +16,12 @@ import 'utils/seed_database.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await dotenv.load(fileName: ".env");
   await Firebase.initializeApp();
 
   await AuthService.initialize();
 
-  // await clearDatabase();
+ // await clearDatabase();
 
   // await seedDatabase();
 

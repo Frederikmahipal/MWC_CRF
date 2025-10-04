@@ -55,31 +55,18 @@ class _WelcomePageState extends State<WelcomePage> {
 
       if (mounted) {
         if (querySnapshot.docs.isNotEmpty) {
-          // User exists - check PIN status
           final userDoc = querySnapshot.docs.first;
           final userId = userDoc.id;
           final userData = userDoc.data();
-
-          // Create User object and set in AuthService
           final user = User.fromMap(userData, userId);
-
-          // Load user in AuthService (but don't authenticate yet)
           await AuthService.loadUserForLogin(user);
-
-          // Load PIN from Firestore for existing user
           final pinLoaded = await PinAuthService.loadPinFromFirestore(userId);
-          print('🔍 PIN loaded from Firestore: $pinLoaded');
-
           if (!pinLoaded) {
-            // No PIN set up, go to PIN setup
-            print('📱 Going to PIN setup for existing user');
             Navigator.of(context).pushAndRemoveUntil(
               CupertinoPageRoute(builder: (context) => const PinSetupPage()),
               (route) => false,
             );
           } else {
-            // PIN is set up, go to PIN login
-            print('🔐 Going to PIN login for existing user');
             Navigator.of(context).pushAndRemoveUntil(
               CupertinoPageRoute(
                 builder: (context) => const PinLoginPage(isAppReopen: false),
@@ -88,7 +75,6 @@ class _WelcomePageState extends State<WelcomePage> {
             );
           }
         } else {
-          // User doesn't exist - start onboarding
           Navigator.of(context).push(
             CupertinoPageRoute(
               builder: (context) => NameInputPage(phoneNumber: phoneNumber),

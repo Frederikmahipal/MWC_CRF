@@ -331,10 +331,8 @@ class _PinSetupPageState extends State<PinSetupPage> {
     try {
       final authSuccess =
           await PinAuthService.authenticateWithBiometricForSetup();
-
       if (authSuccess) {
         final success = await PinAuthService.enableBiometric();
-
         if (mounted) {
           if (success) {
             Navigator.of(context).pushAndRemoveUntil(
@@ -346,9 +344,6 @@ class _PinSetupPageState extends State<PinSetupPage> {
               context: context,
               builder: (context) => CupertinoAlertDialog(
                 title: const Text('Face ID Setup Failed'),
-                content: const Text(
-                  'You can still use your PIN to access your account.',
-                ),
                 actions: [
                   CupertinoDialogAction(
                     child: const Text('OK'),

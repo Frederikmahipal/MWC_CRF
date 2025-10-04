@@ -140,31 +140,6 @@ class _FavoritesPageState extends State<FavoritesPage> {
       return const Center(child: CupertinoActivityIndicator(radius: 20));
     }
 
-    if (_error != null) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(
-              CupertinoIcons.exclamationmark_triangle,
-              size: 48,
-              color: CupertinoColors.systemRed,
-            ),
-            const SizedBox(height: 16),
-            Text(
-              _error!,
-              style: const TextStyle(color: CupertinoColors.systemGrey),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 16),
-            CupertinoButton.filled(
-              onPressed: _loadFavorites,
-              child: const Text('Retry'),
-            ),
-          ],
-        ),
-      );
-    }
 
     if (_favoriteRestaurants.isEmpty) {
       return Center(

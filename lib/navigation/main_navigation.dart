@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import '../pages/restaurants/feed_page.dart';
 import '../pages/search_page.dart';
+import '../pages/ai_chat_page.dart';
 import '../pages/notifications_page.dart';
 import '../pages/profile/profile_page.dart';
 import '../core/app_settings.dart';
@@ -18,8 +19,8 @@ class MainNavigation extends StatelessWidget {
         inactiveColor: AppSettings.getSecondaryTextColor(context),
         items: const [
           BottomNavigationBarItem(
-            icon: Icon(CupertinoIcons.home),
-            label: 'Feed',
+            icon: Icon(CupertinoIcons.chat_bubble_2),
+            label: 'AI Chat',
           ),
           BottomNavigationBarItem(
             icon: Icon(CupertinoIcons.search),
@@ -38,7 +39,7 @@ class MainNavigation extends StatelessWidget {
       tabBuilder: (context, index) {
         switch (index) {
           case 0:
-            return const FeedPage();
+            return const AIChatPage();
           case 1:
             return const SearchPage();
           case 2:
@@ -46,7 +47,7 @@ class MainNavigation extends StatelessWidget {
           case 3:
             return const ProfilePage();
           default:
-            return const FeedPage();
+            return const AIChatPage();
         }
       },
     );
