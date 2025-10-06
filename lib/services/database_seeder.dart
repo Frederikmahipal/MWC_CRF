@@ -1,6 +1,5 @@
 import 'dart:math';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:faker/faker.dart';
 import '../models/user.dart';
 import '../models/review.dart';
@@ -30,57 +29,17 @@ class DatabaseSeeder {
   ];
 
   static Future<void> seedDatabase() async {
-    print('🌱 Starting database seeding...');
+    print('Starting database seeding...');
 
     try {
-//      await _clearExistingData();
-
       final users = await _seedUsers();
-      print('✅ Seeded ${users.length} users');
+      print('Seeded ${users.length} users');
 
       await _seedReviews(users);
-      print('✅ Seeded reviews for all users');
-
-      print('🎉 Database seeding completed successfully!');
+      print('Seeded reviews for all users');
     } catch (e) {
-      print('❌ Error seeding database: $e');
+      print('Error seeding database: $e');
       rethrow;
-    }
-  }
-
-  static Future<void> _clearExistingData() async {
-    print('🧹 Clearing existing data...');
-
-    final usersSnapshot = await FirebaseFirestore.instance
-        .collection('users')
-        .get();
-    for (var doc in usersSnapshot.docs) {
-      final currentUserId = await _getCurrentUserId();
-      if (doc.id != currentUserId) {
-        await doc.reference.delete();
-      }
-    }
-
-    final reviewsSnapshot = await FirebaseFirestore.instance
-        .collection('reviews')
-        .get();
-    for (var doc in reviewsSnapshot.docs) {
-      final reviewData = doc.data();
-      final currentUserId = await _getCurrentUserId();
-      if (reviewData['userId'] != currentUserId) {
-        await doc.reference.delete();
-      }
-    }
-
-  }
-
-  static Future<String?> _getCurrentUserId() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      return prefs.getString('current_user_id');
-    } catch (e) {
-      print('⚠️ Could not get current user ID: $e');
-      return null;
     }
   }
 
@@ -88,7 +47,6 @@ class DatabaseSeeder {
     final List<User> users = [];
 
     for (int i = 0; i < 50; i++) {
-      // Use faker for realistic names
       final firstName = faker.person.firstName();
       final lastName = faker.person.lastName();
       final phoneNumber = faker.phoneNumber.random.numberOfLength(8).toString();
@@ -102,7 +60,6 @@ class DatabaseSeeder {
         phoneNumber: phoneNumber,
       );
 
-      // Create user in Firestore
       await FirestoreService.createOrUpdateUser(
         userId: user.id,
         firstName: user.firstName,
@@ -122,15 +79,12 @@ class DatabaseSeeder {
     final restaurants = await _getRestaurants();
 
     if (restaurants.isEmpty) {
-      print('⚠️ No restaurants found, skipping review seeding');
       return;
     }
 
-    // First, ensure each restaurant gets at least 5 reviews
     for (int i = 0; i < restaurants.length; i++) {
       final restaurant = restaurants[i];
 
-      // Assign 5 reviews per restaurant
       for (int j = 0; j < 5; j++) {
         final user = users[_random.nextInt(users.length)];
         final rating = _generateRating();
@@ -146,14 +100,13 @@ class DatabaseSeeder {
           rating: rating,
           comment: comment,
           createdAt: DateTime.now().subtract(
-            Duration(days: _random.nextInt(180)),
+            Duration(days: _random.nextInt(730)),
           ),
           updatedAt: DateTime.now().subtract(
-            Duration(days: _random.nextInt(180)),
+            Duration(days: _random.nextInt(730)),
           ),
         );
 
-        // Create review in Firestore
         await FirebaseFirestore.instance
             .collection('reviews')
             .add(review.toMap());
@@ -164,9 +117,7 @@ class DatabaseSeeder {
       }
     }
 
-    // Then add additional random reviews for variety
     for (final user in users) {
-      // Each user writes 3-8 additional reviews
       final numAdditionalReviews = 3 + _random.nextInt(6);
 
       for (int i = 0; i < numAdditionalReviews; i++) {
@@ -184,14 +135,13 @@ class DatabaseSeeder {
           rating: rating,
           comment: comment,
           createdAt: DateTime.now().subtract(
-            Duration(days: _random.nextInt(180)),
+            Duration(days: _random.nextInt(730)),
           ),
           updatedAt: DateTime.now().subtract(
-            Duration(days: _random.nextInt(180)),
+            Duration(days: _random.nextInt(730)),
           ),
         );
 
-        // Create review in Firestore
         await FirebaseFirestore.instance
             .collection('reviews')
             .add(review.toMap());
@@ -204,30 +154,25 @@ class DatabaseSeeder {
   }
 
   static Future<List<dynamic>> _getRestaurants() async {
-    // Get restaurants from your cached data (no API call)
     try {
       final restaurantService = RestaurantService();
-      // Get cached restaurants without API call
       final restaurants = restaurantService.getCachedRestaurants();
       if (restaurants != null) {
         print('🍽️ Found ${restaurants.length} cached restaurants');
         return restaurants;
       } else {
         print('⚠️ No cached restaurants found, trying to load...');
-        // If no cache, load restaurants once
         final loadedRestaurants = await restaurantService.getAllRestaurants();
         print('🍽️ Loaded ${loadedRestaurants.length} restaurants');
         return loadedRestaurants;
       }
     } catch (e) {
       print('⚠️ Could not load restaurants: $e');
-      // Fallback to empty list if no restaurants found
       return [];
     }
   }
 
   static int _generateRating() {
-    // Weighted towards positive ratings (3-5 stars)
     final weights = [0.1, 0.1, 0.2, 0.3, 0.3]; // 1,2,3,4,5 stars
     final random = _random.nextDouble();
 
@@ -239,7 +184,6 @@ class DatabaseSeeder {
   }
 
   static String _generateReviewComment(int rating) {
-    // Randomly choose between Danish and English (70% Danish, 30% English)
     final isDanish = _random.nextDouble() < 0.7;
 
     if (isDanish) {

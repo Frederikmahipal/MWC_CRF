@@ -75,7 +75,7 @@ class _AIChatPageState extends State<AIChatPage> {
       value: _controller,
       child: CupertinoPageScaffold(
         navigationBar: CupertinoNavigationBar(
-          middle: const Text('AI Restaurant Finder'),
+          middle: const Text('Restaurant Finder'),
           backgroundColor: AppSettings.getBackgroundColor(context),
         ),
         child: SafeArea(

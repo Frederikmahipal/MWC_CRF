@@ -1,6 +1,5 @@
 import 'package:flutter/cupertino.dart';
 import '../../core/onboarding_controller.dart';
-import '../../navigation/main_navigation.dart';
 import '../../repositories/remote/firestore_service.dart';
 import 'pin_setup_page.dart';
 

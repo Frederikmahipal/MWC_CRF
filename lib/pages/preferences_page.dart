@@ -3,7 +3,6 @@ import 'package:provider/provider.dart';
 import '../core/app_settings.dart';
 import '../core/theme_controller.dart';
 import '../services/pin_auth_service.dart';
-import '../services/auth_service.dart';
 
 class PreferencesPage extends StatefulWidget {
   const PreferencesPage({super.key});

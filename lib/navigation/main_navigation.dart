@@ -1,11 +1,9 @@
 import 'package:flutter/cupertino.dart';
-import '../pages/restaurants/feed_page.dart';
 import '../pages/search_page.dart';
 import '../pages/ai_chat_page.dart';
 import '../pages/notifications_page.dart';
 import '../pages/profile/profile_page.dart';
 import '../core/app_settings.dart';
-import '../services/auth_service.dart';
 
 class MainNavigation extends StatelessWidget {
   const MainNavigation({super.key});
@@ -27,8 +25,8 @@ class MainNavigation extends StatelessWidget {
             label: 'Search',
           ),
           BottomNavigationBarItem(
-            icon: Icon(CupertinoIcons.bell),
-            label: 'Notifications',
+            icon: Icon(CupertinoIcons.chart_bar),
+            label: 'Insights',
           ),
           BottomNavigationBarItem(
             icon: Icon(CupertinoIcons.person),

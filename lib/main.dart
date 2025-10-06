@@ -23,7 +23,7 @@ void main() async {
 
   // await clearDatabase();
 
-  // await seedDatabase();
+   await seedDatabase();
 
   runApp(const CopenhagenRestaurantFinder());
 }
