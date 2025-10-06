@@ -295,16 +295,10 @@ class _ProfilePageState extends State<ProfilePage> with RouteAware {
 
   void _logout() async {
     try {
-      // Clear AuthService (clears user data and session)
       await AuthService.logout();
 
-      // Clear PIN and biometric data
       await PinAuthService.clearAllAuthData();
-
-      // Clear Firebase auth
       await FirebaseAuth.instance.signOut();
-
-      // Reset onboarding state
       await OnboardingController.resetOnboarding();
 
       if (mounted) {

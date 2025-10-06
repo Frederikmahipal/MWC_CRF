@@ -134,13 +134,9 @@ class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
       duration: const Duration(milliseconds: 400),
       transitionBuilder: (Widget child, Animation<double> animation) {
         return ScaleTransition(
-          scale:
-              Tween<double>(
-                begin: 0.0, 
-                end: 1.0, 
-              ).animate(
-                CurvedAnimation(parent: animation, curve: Curves.easeInOut),
-              ),
+          scale: Tween<double>(begin: 0.0, end: 1.0).animate(
+            CurvedAnimation(parent: animation, curve: Curves.easeInOut),
+          ),
           child: FadeTransition(opacity: animation, child: child),
         );
       },
@@ -296,7 +292,7 @@ class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
           ],
         ),
         Positioned(
-          top: 50, 
+          top: 50,
           right: 16,
           child: CupertinoButton(
             padding: const EdgeInsets.all(12),
@@ -415,7 +411,6 @@ class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(restaurant.cuisines.join(', ')),
             if (restaurant.neighborhood != null)
               Text(
                 restaurant.neighborhood!,
@@ -439,6 +434,18 @@ class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
                 CupertinoIcons.checkmark_circle,
                 size: 16,
                 color: CupertinoColors.systemBlue,
+              ),
+            if (restaurant.features.hasDelivery)
+              const Icon(
+                CupertinoIcons.car,
+                size: 16,
+                color: CupertinoColors.systemGreen,
+              ),
+            if (restaurant.features.hasTakeaway)
+              const Icon(
+                CupertinoIcons.bag,
+                size: 16,
+                color: CupertinoColors.systemOrange,
               ),
             const Icon(CupertinoIcons.chevron_right),
           ],

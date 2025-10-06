@@ -147,7 +147,6 @@ class ReviewService {
     }
   }
 
-  // Calculate average rating for a restaurant
   static Future<double> getRestaurantAverageRating(String restaurantId) async {
     try {
       final reviews = await getRestaurantReviews(restaurantId);
@@ -167,7 +166,6 @@ class ReviewService {
     }
   }
 
-  // Get restaurant rating summary
   static Future<Map<String, dynamic>> getRestaurantRatingSummary(
     String restaurantId,
   ) async {
@@ -187,8 +185,6 @@ class ReviewService {
         (sum, review) => sum + review.rating,
       );
       final averageRating = totalRating / reviews.length;
-
-      // Calculate rating distribution
       final ratingDistribution = <int, int>{};
       for (final review in reviews) {
         ratingDistribution[review.rating] =

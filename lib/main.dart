@@ -21,7 +21,7 @@ void main() async {
 
   await AuthService.initialize();
 
- // await clearDatabase();
+  // await clearDatabase();
 
   // await seedDatabase();
 

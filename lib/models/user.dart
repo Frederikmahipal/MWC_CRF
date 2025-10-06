@@ -34,8 +34,12 @@ class User {
       lastName: data['lastName'] ?? '',
       avatarEmoji: data['avatarEmoji'] ?? '👤',
       phoneNumber: data['phoneNumber'] ?? '',
-      createdAt: (data['createdAt'] as Timestamp).toDate(),
-      updatedAt: (data['updatedAt'] as Timestamp).toDate(),
+      createdAt: data['createdAt'] != null
+          ? (data['createdAt'] as Timestamp).toDate()
+          : DateTime.now(),
+      updatedAt: data['updatedAt'] != null
+          ? (data['updatedAt'] as Timestamp).toDate()
+          : DateTime.now(),
       pinHash: data['pinHash'],
       pinSalt: data['pinSalt'],
       biometricEnabled: data['biometricEnabled'] ?? false,

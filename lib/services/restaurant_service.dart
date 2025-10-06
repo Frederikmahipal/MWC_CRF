@@ -214,7 +214,6 @@ class RestaurantService {
     }
   }
 
-  // Get restaurants with their average ratings
   Future<List<Restaurant>> getAllRestaurantsWithRatings() async {
     final restaurants = await getAllRestaurants();
     final restaurantsWithRatings = <Restaurant>[];
@@ -230,7 +229,6 @@ class RestaurantService {
         );
         restaurantsWithRatings.add(updatedRestaurant);
       } catch (e) {
-        // If rating calculation fails, use the original restaurant
         restaurantsWithRatings.add(restaurant);
       }
     }
@@ -238,12 +236,10 @@ class RestaurantService {
     return restaurantsWithRatings;
   }
 
-  // Get restaurants with ratings for AI recommendations (optimized)
   Future<List<Restaurant>> getRestaurantsForAI() async {
     final restaurants = await getAllRestaurants();
     final restaurantsWithRatings = <Restaurant>[];
 
-    // Limit to first 50 restaurants for AI to avoid token limits
     final limitedRestaurants = restaurants.take(50).toList();
 
     for (final restaurant in limitedRestaurants) {

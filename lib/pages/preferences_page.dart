@@ -85,8 +85,6 @@ class _PreferencesPageState extends State<PreferencesPage> {
                   ],
                 ),
               ),
-
-              // Security Section
               Container(
                 margin: const EdgeInsets.all(16),
                 decoration: BoxDecoration(

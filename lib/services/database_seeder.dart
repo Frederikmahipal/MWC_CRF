@@ -33,14 +33,11 @@ class DatabaseSeeder {
     print('🌱 Starting database seeding...');
 
     try {
-      // Clear existing data first
-      await _clearExistingData();
+//      await _clearExistingData();
 
-      // Seed users
       final users = await _seedUsers();
       print('✅ Seeded ${users.length} users');
 
-      // Seed reviews
       await _seedReviews(users);
       print('✅ Seeded reviews for all users');
 
@@ -54,19 +51,16 @@ class DatabaseSeeder {
   static Future<void> _clearExistingData() async {
     print('🧹 Clearing existing data...');
 
-    // Clear users (but keep current user)
     final usersSnapshot = await FirebaseFirestore.instance
         .collection('users')
         .get();
     for (var doc in usersSnapshot.docs) {
-      // Skip deleting the current user's document
       final currentUserId = await _getCurrentUserId();
       if (doc.id != currentUserId) {
         await doc.reference.delete();
       }
     }
 
-    // Clear reviews (but keep current user's reviews)
     final reviewsSnapshot = await FirebaseFirestore.instance
         .collection('reviews')
         .get();
@@ -78,12 +72,10 @@ class DatabaseSeeder {
       }
     }
 
-    print('✅ Existing data cleared (keeping your data)');
   }
 
   static Future<String?> _getCurrentUserId() async {
     try {
-      // Get current user ID from SharedPreferences
       final prefs = await SharedPreferences.getInstance();
       return prefs.getString('current_user_id');
     } catch (e) {

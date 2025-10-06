@@ -152,7 +152,7 @@ class _FeedPageState extends State<FeedPage> {
                 ),
                 child: Center(
                   child: Text(
-                    _getRestaurantEmoji(restaurant.cuisines.first),
+                    _getRestaurantEmoji(restaurant),
                     style: const TextStyle(fontSize: 24),
                   ),
                 ),
@@ -167,15 +167,17 @@ class _FeedPageState extends State<FeedPage> {
                       style: CupertinoTheme.of(context).textTheme.textStyle
                           .copyWith(fontWeight: FontWeight.w600, fontSize: 16),
                     ),
-                    const SizedBox(height: 4),
-                    Text(
-                      restaurant.cuisines.join(' • '),
-                      style: CupertinoTheme.of(context).textTheme.textStyle
-                          .copyWith(
-                            color: AppSettings.getSecondaryTextColor(context),
-                            fontSize: 14,
-                          ),
-                    ),
+                    if (restaurant.cuisines.isNotEmpty) ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        restaurant.cuisines.join(' • '),
+                        style: CupertinoTheme.of(context).textTheme.textStyle
+                            .copyWith(
+                              color: AppSettings.getSecondaryTextColor(context),
+                              fontSize: 14,
+                            ),
+                      ),
+                    ],
                     const SizedBox(height: 8),
                     Row(
                       children: [
@@ -263,8 +265,13 @@ class _FeedPageState extends State<FeedPage> {
     );
   }
 
-  String _getRestaurantEmoji(String cuisine) {
-    switch (cuisine.toLowerCase()) {
+  String _getRestaurantEmoji(Restaurant restaurant) {
+    if (restaurant.cuisines.isEmpty) {
+      return '🍽️';
+    }
+
+    final cuisine = restaurant.cuisines.first.toLowerCase();
+    switch (cuisine) {
       case 'italian':
         return '🍝';
       case 'asian':
