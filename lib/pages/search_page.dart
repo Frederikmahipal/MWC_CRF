@@ -4,7 +4,7 @@ import 'package:latlong2/latlong.dart';
 import '../core/app_settings.dart';
 import '../services/restaurant_service.dart';
 import '../models/restaurant.dart';
-import 'restaurant_main_page.dart';
+import 'restaurants/restaurant_main_page.dart';
 
 class SearchPage extends StatefulWidget {
   const SearchPage({super.key});
@@ -32,6 +32,7 @@ class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
       duration: const Duration(milliseconds: 300),
       vsync: this,
     );
+
     _loadRestaurants();
   }
 
@@ -46,7 +47,6 @@ class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
     try {
       final restaurants = await _restaurantService.getAllRestaurants();
 
-      // Debug: Print some sample cuisine data
       if (restaurants.isNotEmpty) {
         print('🍽️ Sample restaurant cuisines:');
         for (int i = 0; i < 5 && i < restaurants.length; i++) {
@@ -71,7 +71,6 @@ class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
 
     setState(() {
       _filteredRestaurants = _allRestaurants.where((restaurant) {
-        // Search by name, cuisine, or neighborhood
         bool matchesSearch =
             query.isEmpty ||
             restaurant.name.toLowerCase().contains(query) ||
@@ -80,7 +79,6 @@ class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
             ) ||
             (restaurant.neighborhood?.toLowerCase().contains(query) ?? false);
 
-        // Filter by selected cuisines (case-insensitive matching)
         bool matchesCuisine =
             _selectedCuisines.isEmpty ||
             restaurant.cuisines.any((restaurantCuisine) {
@@ -125,17 +123,6 @@ class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
   @override
   Widget build(BuildContext context) {
     return CupertinoPageScaffold(
-      navigationBar: CupertinoNavigationBar(
-        middle: Text(_isMapExpanded ? 'Map View' : 'Search & Map'),
-        backgroundColor: CupertinoColors.systemGroupedBackground,
-        trailing: _isMapExpanded
-            ? CupertinoButton(
-                padding: EdgeInsets.zero,
-                onPressed: _toggleMapExpansion,
-                child: const Text('Done'),
-              )
-            : null,
-      ),
       child: _isLoading
           ? const Center(child: CupertinoActivityIndicator(radius: 20))
           : _buildMainContent(),
@@ -143,25 +130,35 @@ class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
   }
 
   Widget _buildMainContent() {
-    if (_isMapExpanded) {
-      return _buildExpandedMap();
-    }
-
-    return SafeArea(
-      child: Column(
-        children: [
-          _buildSearchSection(),
-          _buildCuisineFilters(),
-          Expanded(
-            child: Row(
-              children: [
-                Expanded(flex: 1, child: _buildMiniMap()),
-                Expanded(flex: 1, child: _buildResultsList()),
-              ],
-            ),
+    return AnimatedSwitcher(
+      duration: const Duration(milliseconds: 400),
+      transitionBuilder: (Widget child, Animation<double> animation) {
+        return ScaleTransition(
+          scale: Tween<double>(begin: 0.0, end: 1.0).animate(
+            CurvedAnimation(parent: animation, curve: Curves.easeInOut),
           ),
-        ],
-      ),
+          child: FadeTransition(opacity: animation, child: child),
+        );
+      },
+      child: _isMapExpanded
+          ? _buildExpandedMap()
+          : SafeArea(
+              key: const ValueKey('normal'),
+              child: Column(
+                children: [
+                  _buildSearchSection(),
+                  _buildCuisineFilters(),
+                  Expanded(
+                    child: Row(
+                      children: [
+                        Expanded(flex: 1, child: _buildMiniMap()),
+                        Expanded(flex: 1, child: _buildResultsList()),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
     );
   }
 
@@ -198,8 +195,8 @@ class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
             child: CupertinoButton(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               color: isSelected
-                  ? CupertinoColors.systemBlue
-                  : CupertinoColors.systemGrey5,
+                  ? AppSettings.primaryColor
+                  : AppSettings.getChipColor(context),
               borderRadius: BorderRadius.circular(20),
               onPressed: () => _toggleCuisineFilter(cuisine),
               child: Text(
@@ -207,7 +204,7 @@ class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
                 style: TextStyle(
                   color: isSelected
                       ? CupertinoColors.white
-                      : CupertinoColors.label,
+                      : AppSettings.getTextColor(context),
                 ),
               ),
             ),
@@ -220,12 +217,10 @@ class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
   Widget _buildMiniMap() {
     final isDark = CupertinoTheme.brightnessOf(context) == Brightness.dark;
 
-    return Container(
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 300),
       margin: const EdgeInsets.all(8),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: CupertinoColors.systemGrey4),
-      ),
+      decoration: BoxDecoration(borderRadius: BorderRadius.circular(12)),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(12),
         child: Stack(
@@ -256,7 +251,7 @@ class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
               right: 8,
               child: CupertinoButton(
                 padding: const EdgeInsets.all(8),
-                color: CupertinoColors.systemBlue.withOpacity(0.8),
+                color: AppSettings.primaryColor.withOpacity(0.9),
                 borderRadius: BorderRadius.circular(20),
                 onPressed: _toggleMapExpansion,
                 child: const Icon(
@@ -275,22 +270,42 @@ class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
   Widget _buildExpandedMap() {
     final isDark = CupertinoTheme.brightnessOf(context) == Brightness.dark;
 
-    return FlutterMap(
-      options: MapOptions(
-        initialCenter: const LatLng(55.6761, 12.5683),
-        initialZoom: 13.0,
-        minZoom: 10.0,
-        maxZoom: 18.0,
-      ),
+    return Stack(
+      key: const ValueKey('expanded'),
       children: [
-        TileLayer(
-          urlTemplate: isDark
-              ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
-              : 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-          subdomains: const ['a', 'b', 'c'],
-          userAgentPackageName: 'com.example.crf',
+        FlutterMap(
+          options: MapOptions(
+            initialCenter: const LatLng(55.6761, 12.5683),
+            initialZoom: 13.0,
+            minZoom: 10.0,
+            maxZoom: 18.0,
+          ),
+          children: [
+            TileLayer(
+              urlTemplate: isDark
+                  ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
+                  : 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+              subdomains: const ['a', 'b', 'c'],
+              userAgentPackageName: 'com.example.crf',
+            ),
+            MarkerLayer(markers: _buildFilteredMarkers()),
+          ],
         ),
-        MarkerLayer(markers: _buildFilteredMarkers()),
+        Positioned(
+          top: 50,
+          right: 16,
+          child: CupertinoButton(
+            padding: const EdgeInsets.all(12),
+            color: AppSettings.primaryColor.withOpacity(0.9),
+            borderRadius: BorderRadius.circular(20),
+            onPressed: _toggleMapExpansion,
+            child: const Icon(
+              CupertinoIcons.xmark,
+              color: CupertinoColors.white,
+              size: 18,
+            ),
+          ),
+        ),
       ],
     );
   }
@@ -312,7 +327,7 @@ class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
           },
           child: Container(
             decoration: BoxDecoration(
-              color: CupertinoColors.systemBlue,
+              color: AppSettings.primaryColor,
               shape: BoxShape.circle,
               border: Border.all(color: CupertinoColors.white, width: 1),
               boxShadow: [
@@ -396,7 +411,6 @@ class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(restaurant.cuisines.join(', ')),
             if (restaurant.neighborhood != null)
               Text(
                 restaurant.neighborhood!,
@@ -421,6 +435,18 @@ class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
                 size: 16,
                 color: CupertinoColors.systemBlue,
               ),
+            if (restaurant.features.hasDelivery)
+              const Icon(
+                CupertinoIcons.car,
+                size: 16,
+                color: CupertinoColors.systemGreen,
+              ),
+            if (restaurant.features.hasTakeaway)
+              const Icon(
+                CupertinoIcons.bag,
+                size: 16,
+                color: CupertinoColors.systemOrange,
+              ),
             const Icon(CupertinoIcons.chevron_right),
           ],
         ),
@@ -435,5 +461,3 @@ class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
     );
   }
 }
-
- 

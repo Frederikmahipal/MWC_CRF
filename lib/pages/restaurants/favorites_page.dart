@@ -1,8 +1,8 @@
 import 'package:flutter/cupertino.dart';
-import '../core/app_settings.dart';
-import '../models/restaurant.dart';
-import '../services/favorites_service.dart';
-import '../services/restaurant_service.dart';
+import '../../core/app_settings.dart';
+import '../../models/restaurant.dart';
+import '../../services/favorites_service.dart';
+import '../../services/restaurant_service.dart';
 import 'restaurant_main_page.dart';
 
 class FavoritesPage extends StatefulWidget {
@@ -140,31 +140,6 @@ class _FavoritesPageState extends State<FavoritesPage> {
       return const Center(child: CupertinoActivityIndicator(radius: 20));
     }
 
-    if (_error != null) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(
-              CupertinoIcons.exclamationmark_triangle,
-              size: 48,
-              color: CupertinoColors.systemRed,
-            ),
-            const SizedBox(height: 16),
-            Text(
-              _error!,
-              style: const TextStyle(color: CupertinoColors.systemGrey),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 16),
-            CupertinoButton.filled(
-              onPressed: _loadFavorites,
-              child: const Text('Retry'),
-            ),
-          ],
-        ),
-      );
-    }
 
     if (_favoriteRestaurants.isEmpty) {
       return Center(

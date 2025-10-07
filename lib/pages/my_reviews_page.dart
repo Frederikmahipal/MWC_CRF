@@ -3,7 +3,7 @@ import '../models/review.dart';
 import '../services/review_service.dart';
 import '../core/app_settings.dart';
 import 'package:timeago/timeago.dart' as timeago;
-import 'restaurant_main_page.dart';
+import 'restaurants/restaurant_main_page.dart';
 import '../services/restaurant_service.dart';
 
 class MyReviewsPage extends StatefulWidget {
@@ -65,14 +65,14 @@ class _MyReviewsPageState extends State<MyReviewsPage> {
             isDestructiveAction: true,
             child: const Text('Delete'),
             onPressed: () async {
-              Navigator.of(context).pop(); 
+              Navigator.of(context).pop();
               setState(() {
                 _isLoading = true;
               });
               try {
                 await ReviewService.deleteReview(reviewId);
                 _showSuccess('Review deleted successfully!');
-                _loadReviews(); 
+                _loadReviews();
               } catch (e) {
                 _showError('Failed to delete review: $e');
               } finally {

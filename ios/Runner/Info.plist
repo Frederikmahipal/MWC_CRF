@@ -65,5 +65,7 @@
 	<array>
 		<string>remote-notification</string>
 	</array>
+	<key>NSFaceIDUsageDescription</key>
+	<string>Use Face ID to quickly access your restaurant account</string>
 </dict>
 </plist>

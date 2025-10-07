@@ -1,8 +1,8 @@
 import 'package:flutter/cupertino.dart';
-import '../pages/feed_page.dart';
 import '../pages/search_page.dart';
+import '../pages/ai_chat_page.dart';
 import '../pages/notifications_page.dart';
-import '../pages/profile_page.dart';
+import '../pages/profile/profile_page.dart';
 import '../core/app_settings.dart';
 
 class MainNavigation extends StatelessWidget {
@@ -12,21 +12,21 @@ class MainNavigation extends StatelessWidget {
   Widget build(BuildContext context) {
     return CupertinoTabScaffold(
       tabBar: CupertinoTabBar(
-        backgroundColor: AppSettings.getBackgroundColor(context),
+        backgroundColor: AppSettings.getSurfaceColor(context),
         activeColor: AppSettings.primaryColor,
-        inactiveColor: AppSettings.secondaryColor,
+        inactiveColor: AppSettings.getSecondaryTextColor(context),
         items: const [
           BottomNavigationBarItem(
-            icon: Icon(CupertinoIcons.home),
-            label: 'Feed',
+            icon: Icon(CupertinoIcons.chat_bubble_2),
+            label: 'AI Chat',
           ),
           BottomNavigationBarItem(
             icon: Icon(CupertinoIcons.search),
             label: 'Search',
           ),
           BottomNavigationBarItem(
-            icon: Icon(CupertinoIcons.bell),
-            label: 'Notifications',
+            icon: Icon(CupertinoIcons.chart_bar),
+            label: 'Insights',
           ),
           BottomNavigationBarItem(
             icon: Icon(CupertinoIcons.person),
@@ -37,7 +37,7 @@ class MainNavigation extends StatelessWidget {
       tabBuilder: (context, index) {
         switch (index) {
           case 0:
-            return const FeedPage();
+            return const AIChatPage();
           case 1:
             return const SearchPage();
           case 2:
@@ -45,7 +45,7 @@ class MainNavigation extends StatelessWidget {
           case 3:
             return const ProfilePage();
           default:
-            return const FeedPage();
+            return const AIChatPage();
         }
       },
     );

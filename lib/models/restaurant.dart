@@ -11,6 +11,8 @@ class Restaurant {
   final String? address;
   final String? neighborhood;
   final RestaurantFeatures features;
+  final double averageRating;
+  final int totalReviews;
 
   const Restaurant({
     required this.id,
@@ -23,6 +25,8 @@ class Restaurant {
     this.address,
     this.neighborhood,
     required this.features,
+    this.averageRating = 0.0,
+    this.totalReviews = 0,
   });
 
   factory Restaurant.fromJson(Map<String, dynamic> json) {
@@ -40,11 +44,13 @@ class Restaurant {
       address: json['addr:street'],
       neighborhood: json['branch'],
       features: RestaurantFeatures.fromJson(json),
+      averageRating: (json['averageRating'] ?? 0.0).toDouble(),
+      totalReviews: json['totalReviews'] ?? 0,
     );
   }
 
   static List<String> _parseCuisines(dynamic cuisineData) {
-    if (cuisineData == null) return ['Unknown'];
+    if (cuisineData == null) return [''];
 
     final cuisineString = cuisineData.toString();
     return cuisineString.split(';').map((c) => c.trim()).toList();
@@ -63,12 +69,44 @@ class Restaurant {
       'address': address,
       'neighborhood': neighborhood,
       'features': features.toJson(),
+      'averageRating': averageRating,
+      'totalReviews': totalReviews,
     };
+  }
+
+  Restaurant copyWith({
+    String? id,
+    String? name,
+    List<String>? cuisines,
+    LatLng? location,
+    String? phone,
+    String? website,
+    String? openingHours,
+    String? address,
+    String? neighborhood,
+    RestaurantFeatures? features,
+    double? averageRating,
+    int? totalReviews,
+  }) {
+    return Restaurant(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      cuisines: cuisines ?? this.cuisines,
+      location: location ?? this.location,
+      phone: phone ?? this.phone,
+      website: website ?? this.website,
+      openingHours: openingHours ?? this.openingHours,
+      address: address ?? this.address,
+      neighborhood: neighborhood ?? this.neighborhood,
+      features: features ?? this.features,
+      averageRating: averageRating ?? this.averageRating,
+      totalReviews: totalReviews ?? this.totalReviews,
+    );
   }
 
   @override
   String toString() {
-    return 'Restaurant(id: $id, name: $name, cuisines: $cuisines, location: $location)';
+    return 'Restaurant(id: $id, name: $name, cuisines: $cuisines, location: $location, averageRating: $averageRating, totalReviews: $totalReviews)';
   }
 }
 

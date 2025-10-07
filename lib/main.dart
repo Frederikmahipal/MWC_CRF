@@ -1,17 +1,29 @@
 import 'package:flutter/cupertino.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'core/app_settings.dart';
 import 'core/app_state.dart';
 import 'core/theme_controller.dart';
 import 'navigation/main_navigation.dart';
 import 'pages/onboarding/welcome_page.dart';
-import 'services/user_detection_service.dart';
+import 'pages/onboarding/pin_setup_page.dart';
+import 'pages/onboarding/pin_login_page.dart';
+import 'services/pin_auth_service.dart';
+import 'services/auth_service.dart';
+import 'utils/clear_database.dart';
+import 'utils/seed_database.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await dotenv.load(fileName: ".env");
   await Firebase.initializeApp();
+
+  await AuthService.initialize();
+
+  // await clearDatabase();
+
+   await seedDatabase();
 
   runApp(const CopenhagenRestaurantFinder());
 }
@@ -34,6 +46,13 @@ class CopenhagenRestaurantFinder extends StatelessWidget {
             theme: CupertinoThemeData(
               primaryColor: AppSettings.primaryColor,
               brightness: themeController.brightness,
+              scaffoldBackgroundColor:
+                  themeController.brightness == Brightness.dark
+                  ? const Color(0xFF0F1419)
+                  : const Color(0xFFF7F3F0),
+              barBackgroundColor: themeController.brightness == Brightness.dark
+                  ? const Color(0xFF1A2332)
+                  : const Color(0xFFFEFCFB),
             ),
             home: const AppInitializer(),
           );
@@ -53,8 +72,8 @@ class AppInitializer extends StatefulWidget {
 class _AppInitializerState extends State<AppInitializer> {
   @override
   Widget build(BuildContext context) {
-    return StreamBuilder<User?>(
-      stream: FirebaseAuth.instance.authStateChanges(),
+    return FutureBuilder<AuthStatus>(
+      future: _checkAuthStatus(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const CupertinoPageScaffold(
@@ -62,46 +81,42 @@ class _AppInitializerState extends State<AppInitializer> {
           );
         }
 
-        if (snapshot.hasData) {
-          // User is authenticated, check if onboarding is completed
-          return const OnboardingWrapper();
-        } else {
-          // User is not authenticated, show welcome page
-          return const WelcomePage();
+        final authStatus = snapshot.data ?? AuthStatus.notAuthenticated;
+
+        switch (authStatus) {
+          case AuthStatus.authenticated:
+            return const MainNavigation();
+          case AuthStatus.needsPinLogin:
+            return const PinLoginPage(isAppReopen: true);
+          case AuthStatus.notAuthenticated:
+          default:
+            return const WelcomePage();
         }
       },
     );
+  }
+
+  Future<AuthStatus> _checkAuthStatus() async {
+    try {
+      if (AuthService.isAuthenticated && AuthService.currentUser != null) {
+        return AuthStatus.authenticated;
+      }
+
+      if (AuthService.currentUser != null && !AuthService.isAuthenticated) {
+        return AuthStatus.needsPinLogin;
+      }
+
+      return AuthStatus.notAuthenticated;
+    } catch (e) {
+      print('Error checking auth status: $e');
+      return AuthStatus.notAuthenticated;
+    }
   }
 }
 
-class OnboardingWrapper extends StatelessWidget {
-  const OnboardingWrapper({Key? key}) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return FutureBuilder<bool>(
-      future: _checkUserStatus(),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const CupertinoPageScaffold(
-            child: Center(child: CupertinoActivityIndicator()),
-          );
-        }
-
-        if (snapshot.data == true) {
-          // User exists in Firestore, go to main app
-          return const MainNavigation();
-        } else {
-          // User doesn't exist in Firestore, show welcome page
-          return const WelcomePage();
-        }
-      },
-    );
-  }
-
-  Future<bool> _checkUserStatus() async {
-    // Check if user exists in Firestore
-    final userExists = await UserDetectionService.isUserInFirestore();
-    return userExists;
-  }
+enum AuthStatus {
+  notAuthenticated,
+  needsPinSetup,
+  needsPinLogin,
+  authenticated,
 }

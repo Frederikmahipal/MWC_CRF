@@ -1,6 +1,7 @@
 import 'dart:math';
 import '../models/restaurant.dart';
 import 'overpass_service.dart';
+import 'review_service.dart';
 import 'package:geocoding/geocoding.dart';
 
 class RestaurantService {
@@ -12,12 +13,9 @@ class RestaurantService {
 
   List<Restaurant>? _cachedRestaurants;
   DateTime? _lastFetchTime;
-  static const Duration _cacheExpiry = Duration(
-    hours: 6,
-  ); 
+  static const Duration _cacheExpiry = Duration(hours: 6);
 
   Future<List<Restaurant>> getAllRestaurants() async {
-    // Return cached data if available and not expired
     if (_cachedRestaurants != null &&
         _lastFetchTime != null &&
         DateTime.now().difference(_lastFetchTime!) < _cacheExpiry) {
@@ -32,7 +30,6 @@ class RestaurantService {
       _lastFetchTime = DateTime.now();
       return _cachedRestaurants!;
     } catch (e) {
-
       if (_cachedRestaurants != null) {
         return _cachedRestaurants!;
       }
@@ -148,14 +145,17 @@ class RestaurantService {
     _lastFetchTime = null;
   }
 
-// Calculate distance between two points in kilometers
+  List<Restaurant>? getCachedRestaurants() {
+    return _cachedRestaurants;
+  }
+
   double _calculateDistance(
     double lat1,
     double lon1,
     double lat2,
     double lon2,
   ) {
-    const double earthRadius = 6371; // Earth's radius in kilometers
+    const double earthRadius = 6371; // Earths radius in kilometers
 
     final dLat = _degreesToRadians(lat2 - lat1);
     final dLon = _degreesToRadians(lon2 - lon1);
@@ -212,5 +212,51 @@ class RestaurantService {
     } catch (e) {
       return '${lat.toStringAsFixed(4)}, ${lon.toStringAsFixed(4)}';
     }
+  }
+
+  Future<List<Restaurant>> getAllRestaurantsWithRatings() async {
+    final restaurants = await getAllRestaurants();
+    final restaurantsWithRatings = <Restaurant>[];
+
+    for (final restaurant in restaurants) {
+      try {
+        final ratingSummary = await ReviewService.getRestaurantRatingSummary(
+          restaurant.id,
+        );
+        final updatedRestaurant = restaurant.copyWith(
+          averageRating: ratingSummary['averageRating'] as double,
+          totalReviews: ratingSummary['totalReviews'] as int,
+        );
+        restaurantsWithRatings.add(updatedRestaurant);
+      } catch (e) {
+        restaurantsWithRatings.add(restaurant);
+      }
+    }
+
+    return restaurantsWithRatings;
+  }
+
+  Future<List<Restaurant>> getRestaurantsForAI() async {
+    final restaurants = await getAllRestaurants();
+    final restaurantsWithRatings = <Restaurant>[];
+
+    final limitedRestaurants = restaurants.take(50).toList();
+
+    for (final restaurant in limitedRestaurants) {
+      try {
+        final averageRating = await ReviewService.getRestaurantAverageRating(
+          restaurant.id,
+        );
+        final updatedRestaurant = restaurant.copyWith(
+          averageRating: averageRating,
+        );
+        restaurantsWithRatings.add(updatedRestaurant);
+      } catch (e) {
+        // If rating calculation fails, use the original restaurant
+        restaurantsWithRatings.add(restaurant);
+      }
+    }
+
+    return restaurantsWithRatings;
   }
 }

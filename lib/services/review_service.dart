@@ -146,4 +146,63 @@ class ReviewService {
       return null;
     }
   }
+
+  static Future<double> getRestaurantAverageRating(String restaurantId) async {
+    try {
+      final reviews = await getRestaurantReviews(restaurantId);
+
+      if (reviews.isEmpty) {
+        return 0.0;
+      }
+
+      final totalRating = reviews.fold(
+        0.0,
+        (sum, review) => sum + review.rating,
+      );
+      return totalRating / reviews.length;
+    } catch (e) {
+      print('Error calculating average rating: $e');
+      return 0.0;
+    }
+  }
+
+  static Future<Map<String, dynamic>> getRestaurantRatingSummary(
+    String restaurantId,
+  ) async {
+    try {
+      final reviews = await getRestaurantReviews(restaurantId);
+
+      if (reviews.isEmpty) {
+        return {
+          'averageRating': 0.0,
+          'totalReviews': 0,
+          'ratingDistribution': <int, int>{},
+        };
+      }
+
+      final totalRating = reviews.fold(
+        0.0,
+        (sum, review) => sum + review.rating,
+      );
+      final averageRating = totalRating / reviews.length;
+      final ratingDistribution = <int, int>{};
+      for (final review in reviews) {
+        ratingDistribution[review.rating] =
+            (ratingDistribution[review.rating] ?? 0) + 1;
+      }
+
+      return {
+        'averageRating': averageRating,
+        'totalReviews': reviews.length,
+        'ratingDistribution': ratingDistribution,
+      };
+    } catch (e) {
+      print('Error getting rating summary: $e');
+      return {
+        'averageRating': 0.0,
+        'totalReviews': 0,
+        'ratingDistribution': <int, int>{},
+      };
+    }
+  }
 }

@@ -3,7 +3,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import '../services/restaurant_service.dart';
 import '../models/restaurant.dart';
-import 'restaurant_main_page.dart';
+import '../pages/restaurants/restaurant_main_page.dart';
 
 class MapPage extends StatefulWidget {
   const MapPage({super.key});

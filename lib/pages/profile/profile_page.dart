@@ -1,14 +1,16 @@
 import 'package:flutter/cupertino.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:crf/services/user_detection_service.dart';
-import '../core/app_settings.dart';
-import '../core/onboarding_controller.dart';
-import '../services/favorites_service.dart';
-import '../services/review_service.dart';
-import 'onboarding/welcome_page.dart';
-import 'preferences_page.dart';
-import 'favorites_page.dart';
-import 'my_reviews_page.dart';
+import '../../core/app_settings.dart';
+import '../../core/onboarding_controller.dart';
+import '../../services/favorites_service.dart';
+import '../../services/review_service.dart';
+import '../../services/auth_service.dart';
+import '../../services/pin_auth_service.dart';
+import '../../pages/onboarding/welcome_page.dart';
+import '../../pages/preferences_page.dart';
+import '../restaurants/favorites_page.dart';
+import '../../pages/my_reviews_page.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -47,11 +49,11 @@ class _ProfilePageState extends State<ProfilePage> with RouteAware {
 
   Future<void> _loadUserData() async {
     try {
-      final userData = await UserDetectionService.getUserData();
-      if (userData != null) {
+      final user = await UserDetectionService.getUserData();
+      if (user != null) {
         setState(() {
-          _username = '${userData['firstName']} ${userData['lastName']}';
-          _avatar = userData['avatarEmoji'] ?? '👤';
+          _username = user.fullName;
+          _avatar = user.avatarEmoji;
         });
       } else {
         final localData = await OnboardingController.getCurrentUser();
@@ -201,8 +203,7 @@ class _ProfilePageState extends State<ProfilePage> with RouteAware {
                 _buildMenuItem(
                   icon: CupertinoIcons.info_circle,
                   title: 'About',
-                  onTap: () {
-                  },
+                  onTap: () {},
                 ),
                 _buildMenuItem(
                   icon: CupertinoIcons.square_arrow_right,
@@ -293,8 +294,10 @@ class _ProfilePageState extends State<ProfilePage> with RouteAware {
 
   void _logout() async {
     try {
-      await FirebaseAuth.instance.signOut();
+      await AuthService.logout();
 
+      await PinAuthService.clearAllAuthData();
+      await FirebaseAuth.instance.signOut();
       await OnboardingController.resetOnboarding();
 
       if (mounted) {
