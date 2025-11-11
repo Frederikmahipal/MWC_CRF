@@ -5,6 +5,8 @@ class MonthlyInsights {
   final List<RestaurantInsight> topRestaurants;
   final List<RestaurantInsight> mostReviewedRestaurants;
   final List<RestaurantInsight> highestRatedRestaurants;
+  final List<RestaurantInsight> mostVisitedRestaurants;
+  final List<RestaurantInsight> mostLikedRestaurants;
   final int totalReviews;
   final double averageRating;
   final Map<int, int> ratingDistribution;
@@ -16,6 +18,8 @@ class MonthlyInsights {
     required this.topRestaurants,
     required this.mostReviewedRestaurants,
     required this.highestRatedRestaurants,
+    required this.mostVisitedRestaurants,
+    required this.mostLikedRestaurants,
     required this.totalReviews,
     required this.averageRating,
     required this.ratingDistribution,
@@ -37,6 +41,8 @@ class RestaurantInsight {
   final int threeStarCount;
   final int twoStarCount;
   final int oneStarCount;
+  final int uniqueVisitors;
+  final int totalLikes;
 
   const RestaurantInsight({
     required this.restaurantId,
@@ -48,6 +54,8 @@ class RestaurantInsight {
     required this.threeStarCount,
     required this.twoStarCount,
     required this.oneStarCount,
+    this.uniqueVisitors = 0,
+    this.totalLikes = 0,
   });
 
   double get ratingPercentage {

@@ -9,6 +9,7 @@ class FirestoreService {
   static const String _usersCollection = 'users';
   static const String _reviewsCollection = 'reviews';
   static const String _favoritesCollection = 'favorites';
+  static const String _visitedCollection = 'user_visits';
   static const String _notificationsCollection = 'notifications';
 
   static Future<void> initialize() async {
@@ -81,6 +82,15 @@ class FirestoreService {
     }
   }
 
+  static Future<void> deleteUser(String userId) async {
+    try {
+      await _firestore.collection(_usersCollection).doc(userId).delete();
+    } catch (e) {
+      print('Error deleting user: $e');
+      rethrow;
+    }
+  }
+
   static Future<String> addReview({
     required String userId,
     required String restaurantId,
@@ -139,7 +149,10 @@ class FirestoreService {
     if (!doc.exists) return false;
 
     final data = doc.data();
-    return data?[restaurantId] == true;
+    final value = data?[restaurantId];
+
+    // Check if it's favorited (true for manual likes or non-empty timestamp string for seeded likes)
+    return value == true || (value is String && value.toString().isNotEmpty);
   }
 
   static Future<List<String>> getUsersWhoFavorited(String restaurantId) async {
@@ -149,6 +162,63 @@ class FirestoreService {
         .get();
 
     return querySnapshot.docs.map((doc) => doc.id).toList();
+  }
+
+  static Future<void> markRestaurantAsVisited(
+    String userId,
+    String restaurantId,
+  ) async {
+    await _firestore.collection(_visitedCollection).doc(userId).set({
+      restaurantId: FieldValue.serverTimestamp(),
+    }, SetOptions(merge: true));
+  }
+
+  static Future<void> removeRestaurantFromVisited(
+    String userId,
+    String restaurantId,
+  ) async {
+    await _firestore.collection(_visitedCollection).doc(userId).update({
+      restaurantId: FieldValue.delete(),
+    });
+  }
+
+  static Future<DocumentSnapshot> getUserVisitedRestaurants(
+    String userId,
+  ) async {
+    return await _firestore.collection(_visitedCollection).doc(userId).get();
+  }
+
+  static Future<bool> hasUserVisitedRestaurant(
+    String userId,
+    String restaurantId,
+  ) async {
+    final doc = await _firestore
+        .collection(_visitedCollection)
+        .doc(userId)
+        .get();
+    if (!doc.exists) return false;
+
+    final data = doc.data();
+    return data?[restaurantId] != null;
+  }
+
+  static Future<List<String>> getUsersWhoVisited(String restaurantId) async {
+    final querySnapshot = await _firestore.collection(_visitedCollection).get();
+
+    final users = <String>[];
+    for (final doc in querySnapshot.docs) {
+      final data = doc.data();
+      if (data[restaurantId] != null) {
+        users.add(doc.id);
+      }
+    }
+
+    return users;
+  }
+
+  static Future<int> getUniqueVisitorsCount(String restaurantId) async {
+    final users = await getUsersWhoVisited(restaurantId);
+    return users.length;
   }
 
   static Future<void> addNotification({

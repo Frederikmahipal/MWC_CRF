@@ -1,5 +1,6 @@
 import '../repositories/remote/firestore_service.dart';
 import '../core/onboarding_controller.dart';
+import '../core/insights_refresh_notifier.dart';
 
 class FavoritesService {
   static Future<bool> addToFavorites(String restaurantId) async {
@@ -12,6 +13,10 @@ class FavoritesService {
       }
 
       await FirestoreService.addToFavorites(userId, restaurantId);
+
+      // Notify insights page to refresh (likes changed)
+      InsightsRefreshNotifier().notifyRefresh(DataChangeType.likes);
+
       return true;
     } catch (e) {
       return false;
@@ -28,11 +33,16 @@ class FavoritesService {
       }
 
       await FirestoreService.removeFromFavorites(userId, restaurantId);
+
+      // Notify insights page to refresh (likes changed)
+      InsightsRefreshNotifier().notifyRefresh(DataChangeType.likes);
+
       return true;
     } catch (e) {
       return false;
     }
   }
+
   static Future<bool> isFavorited(String restaurantId) async {
     try {
       final userData = await OnboardingController.getCurrentUser();
@@ -60,7 +70,11 @@ class FavoritesService {
       if (data == null) return [];
 
       return data.entries
-          .where((entry) => entry.value == true)
+          .where(
+            (entry) =>
+                entry.value == true ||
+                (entry.value is String && entry.value.toString().isNotEmpty),
+          )
           .map((entry) => entry.key)
           .toList();
     } catch (e) {

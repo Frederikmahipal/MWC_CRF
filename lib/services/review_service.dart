@@ -1,6 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/review.dart';
+import 'visited_restaurants_service.dart';
+import '../core/insights_refresh_notifier.dart';
 
 class ReviewService {
   static final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -35,6 +37,11 @@ class ReviewService {
       };
 
       await _firestore.collection(_reviewsCollection).add(reviewData);
+
+      await VisitedRestaurantsService.markAsVisited(restaurantId);
+
+      // Notify insights page to refresh (reviews and visits changed)
+      InsightsRefreshNotifier().notifyRefresh(DataChangeType.reviews);
 
       print('✅ Review added successfully');
     } catch (e) {
