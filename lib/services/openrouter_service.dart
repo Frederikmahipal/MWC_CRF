@@ -35,11 +35,7 @@ class OpenRouterService {
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
 
-        print('🔍 API Response Debug:');
-        print('Status: ${response.statusCode}');
-        print('Response body length: ${response.body.length}');
-        print('Choices count: ${data['choices']?.length ?? 0}');
-
+      
         final aiResponse =
             data['choices'][0]['message']['content'] ?? 'No response generated';
 
@@ -55,16 +51,8 @@ class OpenRouterService {
           );
         }
 
-        print('🤖 AI CHAT - AI Response:');
-        print('💬 Response length: ${aiResponse.length} characters');
-        print('💬 Complete response: "$aiResponse"');
-        print('─' * 50);
-
         return aiResponse;
       } else {
-        print(
-          'OpenRouter API error: ${response.statusCode} - ${response.body}',
-        );
         return 'Sorry, I couldn\'t process your request. Please try again.';
       }
     } catch (e) {

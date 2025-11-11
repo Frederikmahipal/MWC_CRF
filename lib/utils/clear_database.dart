@@ -1,25 +1,20 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-
 Future<void> clearDatabase() async {
   print('🧹 Starting database clearing...');
 
   try {
-    final usersSnapshot = await FirebaseFirestore.instance
-        .collection('users')
-        .get();
-    for (var doc in usersSnapshot.docs) {
-      await doc.reference.delete();
-    }
-    print('✅ Cleared ${usersSnapshot.docs.length} users');
+    // Clear users
+    await _clearCollection('users');
 
-    final reviewsSnapshot = await FirebaseFirestore.instance
-        .collection('reviews')
-        .get();
-    for (var doc in reviewsSnapshot.docs) {
-      await doc.reference.delete();
-    }
-    print('✅ Cleared ${reviewsSnapshot.docs.length} reviews');
+    // Clear reviews
+    await _clearCollection('reviews');
+
+    // Clear user visits
+    await _clearCollection('user_visits');
+
+    // Clear favorites
+    await _clearCollection('favorites');
 
     print('🎉 Database cleared successfully!');
   } catch (e) {
@@ -28,4 +23,42 @@ Future<void> clearDatabase() async {
   }
 }
 
+Future<void> _clearCollection(String collectionName) async {
+  print('🧹 Clearing $collectionName...');
 
+  // Get all documents in batches
+  const int batchSize = 100;
+  bool hasMore = true;
+  int totalDeleted = 0;
+
+  while (hasMore) {
+    final snapshot = await FirebaseFirestore.instance
+        .collection(collectionName)
+        .limit(batchSize)
+        .get();
+
+    if (snapshot.docs.isEmpty) {
+      hasMore = false;
+      break;
+    }
+
+    // Delete in batches
+    final batch = FirebaseFirestore.instance.batch();
+    for (var doc in snapshot.docs) {
+      batch.delete(doc.reference);
+    }
+
+    await batch.commit();
+    totalDeleted += snapshot.docs.length;
+    print(
+      '✅ Deleted ${snapshot.docs.length} $collectionName documents (total: $totalDeleted)',
+    );
+
+    // If we got less than batchSize, we're done
+    if (snapshot.docs.length < batchSize) {
+      hasMore = false;
+    }
+  }
+
+  print('✅ Cleared $totalDeleted $collectionName documents');
+}

@@ -4,6 +4,8 @@ import '../../../core/app_settings.dart';
 import 'overall_stats_widget.dart';
 import 'most_reviewed_widget.dart';
 import 'highest_rated_widget.dart';
+import 'most_visited_widget.dart';
+import 'most_liked_widget.dart';
 
 class MonthlyInsightCardWidget extends StatelessWidget {
   final MonthlyInsights insight;
@@ -53,6 +55,22 @@ class MonthlyInsightCardWidget extends StatelessWidget {
               onTap: () => onRestaurantTap(
                 insight.mostReviewedRestaurants.first.restaurantId,
               ),
+            ),
+          const SizedBox(height: 12),
+
+          // Most visited restaurants
+          if (insight.mostVisitedRestaurants.isNotEmpty)
+            MostVisitedWidget(
+              restaurants: insight.mostVisitedRestaurants.take(3).toList(),
+              onRestaurantTap: onRestaurantTap,
+            ),
+          const SizedBox(height: 12),
+
+          // Most liked restaurants
+          if (insight.mostLikedRestaurants.isNotEmpty)
+            MostLikedWidget(
+              restaurants: insight.mostLikedRestaurants.take(3).toList(),
+              onRestaurantTap: onRestaurantTap,
             ),
         ],
       ),

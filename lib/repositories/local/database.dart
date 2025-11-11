@@ -9,7 +9,7 @@ part 'database.g.dart';
 class Restaurants extends Table {
   TextColumn get id => text()();
   TextColumn get name => text()();
-  TextColumn get cuisines => text()(); // JSON array as string
+  TextColumn get cuisines => text()(); 
   RealColumn get latitude => real()();
   RealColumn get longitude => real()();
   TextColumn get phone => text().nullable()();

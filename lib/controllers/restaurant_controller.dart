@@ -180,18 +180,26 @@ class RestaurantController extends ChangeNotifier {
         final success = await FavoritesService.removeFromFavorites(
           restaurantId,
         );
-        if (success) {
-          _updateState(
-            _state.copyWith(isFavorited: false, isLoadingFavorite: false),
-          );
-        }
+        _updateState(
+          _state.copyWith(
+            isFavorited: success ? false : _state.isFavorited,
+            isLoadingFavorite: false,
+          ),
+        );
       } else {
         final success = await FavoritesService.addToFavorites(restaurantId);
-        if (success) {
-          _updateState(
-            _state.copyWith(isFavorited: true, isLoadingFavorite: false),
-          );
-        }
+        _updateState(
+          _state.copyWith(
+            isFavorited: success ? true : _state.isFavorited,
+            isLoadingFavorite: false,
+          ),
+        );
+      }
+
+      // recheck the actual favorite status from Firestore to ensure sync
+      final actualStatus = await FavoritesService.isFavorited(restaurantId);
+      if (actualStatus != _state.isFavorited) {
+        _updateState(_state.copyWith(isFavorited: actualStatus));
       }
     } catch (e) {
       _updateState(

@@ -188,6 +188,7 @@ class AuthService {
     }
   }
 
+
   static Future<void> _clearUser() async {
     _currentUser = null;
     _isAuthenticated = false;

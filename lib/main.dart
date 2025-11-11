@@ -21,9 +21,9 @@ void main() async {
 
   await AuthService.initialize();
 
-  // await clearDatabase();
+ // await clearDatabase();
 
-   await seedDatabase();
+ //  await seedDatabase();
 
   runApp(const CopenhagenRestaurantFinder());
 }

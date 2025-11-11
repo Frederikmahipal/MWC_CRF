@@ -6,7 +6,6 @@ Future<void> seedDatabase() async {
   print('Database seeding completed');
 }
 
-
 void runSeeder() {
   seedDatabase();
 }

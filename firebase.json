@@ -1,1 +1,25 @@
-{"flutter":{"platforms":{"ios":{"default":{"projectId":"copenhagen-restaurant-finder","appId":"1:904565808905:ios:66165332f3920bb41bbdd8","uploadDebugSymbols":false,"fileOutput":"ios/Runner/GoogleService-Info.plist"}},"dart":{"lib/firebase_options.dart":{"projectId":"copenhagen-restaurant-finder","configurations":{"ios":"1:904565808905:ios:66165332f3920bb41bbdd8"}}}}}}
+{
+  "firestore": {
+    "rules": "firestore.rules"
+  },
+  "flutter": {
+    "platforms": {
+      "ios": {
+        "default": {
+          "projectId": "copenhagen-restaurant-finder",
+          "appId": "1:904565808905:ios:66165332f3920bb41bbdd8",
+          "uploadDebugSymbols": false,
+          "fileOutput": "ios/Runner/GoogleService-Info.plist"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "copenhagen-restaurant-finder",
+          "configurations": {
+            "ios": "1:904565808905:ios:66165332f3920bb41bbdd8"
+          }
+        }
+      }
+    }
+  }
+}

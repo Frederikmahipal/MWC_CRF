@@ -5,6 +5,7 @@ import '../models/user.dart';
 import '../models/review.dart';
 import '../repositories/remote/firestore_service.dart';
 import '../services/restaurant_service.dart';
+import 'insights_cache_service.dart';
 
 class DatabaseSeeder {
   static final Random _random = Random();
@@ -37,6 +38,8 @@ class DatabaseSeeder {
 
       await _seedReviews(users);
       print('Seeded reviews for all users');
+
+      await _seedUserVisits(users);
     } catch (e) {
       print('Error seeding database: $e');
       rethrow;
@@ -68,8 +71,6 @@ class DatabaseSeeder {
         phoneNumber: user.phoneNumber,
       );
       users.add(user);
-
-      print('👤 Created user: $firstName $lastName ($phoneNumber)');
     }
 
     return users;
@@ -82,10 +83,17 @@ class DatabaseSeeder {
       return;
     }
 
+    print('🍽️ Seeding reviews for ${restaurants.length} restaurants...');
+
     for (int i = 0; i < restaurants.length; i++) {
       final restaurant = restaurants[i];
+      final reviewsPerRestaurant =
+          15 +
+          _random.nextInt(
+            16,
+          ); // 15-30 reviews 
 
-      for (int j = 0; j < 5; j++) {
+      for (int j = 0; j < reviewsPerRestaurant; j++) {
         final user = users[_random.nextInt(users.length)];
         final rating = _generateRating();
         final comment = _generateReviewComment(rating);
@@ -100,25 +108,25 @@ class DatabaseSeeder {
           rating: rating,
           comment: comment,
           createdAt: DateTime.now().subtract(
-            Duration(days: _random.nextInt(730)),
+            Duration(days: _random.nextInt(1095)), // 3 years back
           ),
           updatedAt: DateTime.now().subtract(
-            Duration(days: _random.nextInt(730)),
+            Duration(days: _random.nextInt(1095)), // 3 years back
           ),
         );
 
         await FirebaseFirestore.instance
             .collection('reviews')
             .add(review.toMap());
-
-        print(
-          '⭐ Created review by ${user.firstName}: $rating stars for ${restaurant.name}',
-        );
       }
     }
 
     for (final user in users) {
-      final numAdditionalReviews = 3 + _random.nextInt(6);
+      final numAdditionalReviews =
+          10 +
+          _random.nextInt(
+            11,
+          ); // 10-20 reviews
 
       for (int i = 0; i < numAdditionalReviews; i++) {
         final restaurant = restaurants[_random.nextInt(restaurants.length)];
@@ -135,22 +143,180 @@ class DatabaseSeeder {
           rating: rating,
           comment: comment,
           createdAt: DateTime.now().subtract(
-            Duration(days: _random.nextInt(730)),
+            Duration(days: _random.nextInt(1095)), // 3 years back
           ),
           updatedAt: DateTime.now().subtract(
-            Duration(days: _random.nextInt(730)),
+            Duration(days: _random.nextInt(1095)), // 3 years back
           ),
         );
 
         await FirebaseFirestore.instance
             .collection('reviews')
             .add(review.toMap());
-
-        print(
-          '⭐ Created additional review by ${user.firstName}: $rating stars for ${restaurant.name}',
-        );
       }
     }
+
+    // Seed user visits and favorites
+    await _seedUserVisitsSimple(users, restaurants);
+    await _seedUserFavorites(users, restaurants);
+  }
+
+  /// Smart version that creates visits based on reviews + additional visits
+  static Future<void> _seedUserVisitsSimple(
+    List<User> users,
+    List<dynamic> restaurants,
+  ) async {
+    print('📍 Seeding user visits (smart version)...');
+
+    // First, get all reviews for each user to determine which restaurants they visited
+    final userVisits = <String, Set<String>>{};
+
+    for (final user in users) {
+      userVisits[user.id] = <String>{};
+
+      // Get reviews for this user
+      final userReviews = await FirebaseFirestore.instance
+          .collection('reviews')
+          .where('userId', isEqualTo: user.id)
+          .get();
+
+      // Add restaurants they reviewed (they automatically visited these)
+      for (final reviewDoc in userReviews.docs) {
+        final restaurantId = reviewDoc.data()['restaurantId'] as String?;
+        if (restaurantId != null) {
+          userVisits[user.id]!.add(restaurantId);
+        }
+      }
+
+      //additional visits
+      final additionalVisits = 30 + _random.nextInt(31);
+      final currentVisits = userVisits[user.id]!.length;
+      final targetVisits = currentVisits + additionalVisits;
+
+      while (userVisits[user.id]!.length < targetVisits) {
+        final restaurant = restaurants[_random.nextInt(restaurants.length)];
+        if (!userVisits[user.id]!.contains(restaurant.id)) {
+          userVisits[user.id]!.add(restaurant.id);
+        }
+      }
+    }
+
+    // visited documents for each user
+    for (final entry in userVisits.entries) {
+      final userId = entry.key;
+      final restaurantIds = entry.value;
+
+      final visitedData = <String, dynamic>{};
+      for (final restaurantId in restaurantIds) {
+        // random timestamp within 3 years
+        final randomDaysAgo = _random.nextInt(1095);
+        visitedData[restaurantId] = DateTime.now()
+            .subtract(Duration(days: randomDaysAgo))
+            .toIso8601String();
+      }
+
+      await FirebaseFirestore.instance
+          .collection('user_visits')
+          .doc(userId)
+          .set(visitedData);
+
+    }
+  }
+
+  static Future<void> _seedUserVisits(List<User> users) async {
+
+    final reviewsSnapshot = await FirebaseFirestore.instance
+        .collection('reviews')
+        .get();
+
+    final userVisits = <String, Set<String>>{};
+
+    // sort visits by user from reviews
+    for (final doc in reviewsSnapshot.docs) {
+      final data = doc.data();
+      final userId = data['userId'] as String?;
+      final restaurantId = data['restaurantId'] as String?;
+
+      if (userId != null && restaurantId != null) {
+        userVisits.putIfAbsent(userId, () => <String>{});
+        userVisits[userId]!.add(restaurantId);
+      }
+    }
+
+    final restaurants = await _getRestaurants();
+
+    // Add some manual visits
+    for (final user in users) {
+      userVisits.putIfAbsent(user.id, () => <String>{});
+
+    
+      final additionalVisits = 30 + _random.nextInt(31);
+      final currentVisits = userVisits[user.id]!.length;
+      final targetVisits = currentVisits + additionalVisits;
+
+      while (userVisits[user.id]!.length < targetVisits) {
+        final restaurant = restaurants[_random.nextInt(restaurants.length)];
+        if (!userVisits[user.id]!.contains(restaurant.id)) {
+          userVisits[user.id]!.add(restaurant.id);
+        }
+      }
+    }
+
+    for (final entry in userVisits.entries) {
+      final userId = entry.key;
+      final restaurantIds = entry.value;
+
+      final visitedData = <String, dynamic>{};
+      for (final restaurantId in restaurantIds) {
+        final randomDaysAgo = _random.nextInt(1095);
+        visitedData[restaurantId] = DateTime.now()
+            .subtract(Duration(days: randomDaysAgo))
+            .toIso8601String();
+      }
+
+      await FirebaseFirestore.instance
+          .collection('user_visits')
+          .doc(userId)
+          .set(visitedData);
+    }
+
+    print('📍 User visits seeding completed');
+  }
+
+  static Future<void> _seedUserFavorites(
+    List<User> users,
+    List<dynamic> restaurants,
+  ) async {
+    print('❤️ Seeding user favorites...');
+
+    for (final user in users) {
+      // user favorites 25-50 restaurants
+      final numFavorites = 25 + _random.nextInt(26);
+      final favoriteRestaurants = <String>{};
+
+      for (int i = 0; i < numFavorites; i++) {
+        final restaurant = restaurants[_random.nextInt(restaurants.length)];
+        favoriteRestaurants.add(restaurant.id);
+      }
+      final favoritesData = <String, dynamic>{};
+      for (final restaurantId in favoriteRestaurants) {
+        final randomDaysAgo = _random.nextInt(1095);
+        favoritesData[restaurantId] = DateTime.now()
+            .subtract(Duration(days: randomDaysAgo))
+            .toIso8601String();
+      }
+
+      await FirebaseFirestore.instance
+          .collection('favorites')
+          .doc(user.id)
+          .set(favoritesData);
+
+      print(
+        '❤️ Created ${favoriteRestaurants.length} favorites for user ${user.firstName}',
+      );
+    }
+
+    print('❤️ User favorites seeding completed');
   }
 
   static Future<List<dynamic>> _getRestaurants() async {
@@ -158,16 +324,12 @@ class DatabaseSeeder {
       final restaurantService = RestaurantService();
       final restaurants = restaurantService.getCachedRestaurants();
       if (restaurants != null) {
-        print('🍽️ Found ${restaurants.length} cached restaurants');
         return restaurants;
       } else {
-        print('⚠️ No cached restaurants found, trying to load...');
         final loadedRestaurants = await restaurantService.getAllRestaurants();
-        print('🍽️ Loaded ${loadedRestaurants.length} restaurants');
         return loadedRestaurants;
       }
     } catch (e) {
-      print('⚠️ Could not load restaurants: $e');
       return [];
     }
   }

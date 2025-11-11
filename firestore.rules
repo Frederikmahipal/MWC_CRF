@@ -1,0 +1,47 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Test collection - allow all for connection testing
+    match /test/{document=**} {
+      allow read, write: if true;
+    }
+    
+    // Users collection - allow read/write for development
+    match /users/{userId} {
+      allow read, write: if true;
+    }
+    
+    // Reviews collection - public reads, allow writes for development
+    match /reviews/{reviewId} {
+      allow read: if true;
+      allow write: if true;
+    }
+    
+    // Favorites collection - allow read/write for development
+    match /favorites/{userId} {
+      allow read, write: if true;
+    }
+    
+    // User visits collection - allow read/write for development
+    match /user_visits/{userId} {
+      allow read, write: if true;
+    }
+    
+    // Notifications collection - allow read/write for development
+    match /notifications/{userId} {
+      allow read, write: if true;
+      
+      // Subcollection: user_notifications
+      match /user_notifications/{notificationId} {
+        allow read, write: if true;
+      }
+    }
+    
+    // Default: deny all other access
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
+
