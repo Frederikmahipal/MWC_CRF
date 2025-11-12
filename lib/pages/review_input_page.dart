@@ -1,5 +1,8 @@
+import 'dart:io';
 import 'package:flutter/cupertino.dart';
+import 'package:image_picker/image_picker.dart';
 import '../services/review_service.dart';
+import '../services/ml_food_classifier_service.dart';
 
 class ReviewInputPage extends StatefulWidget {
   final String restaurantId;
@@ -23,8 +26,12 @@ class ReviewInputPage extends StatefulWidget {
 
 class _ReviewInputPageState extends State<ReviewInputPage> {
   final TextEditingController _commentController = TextEditingController();
+  final TextEditingController _dishController = TextEditingController();
+  final ImagePicker _imagePicker = ImagePicker();
+  File? _selectedImage;
   int _selectedRating = 5;
   bool _isLoading = false;
+  bool _isClassifying = false;
 
   @override
   void initState() {
@@ -40,7 +47,60 @@ class _ReviewInputPageState extends State<ReviewInputPage> {
   @override
   void dispose() {
     _commentController.dispose();
+    _dishController.dispose();
     super.dispose();
+  }
+
+  Future<void> _pickImage() async {
+    final source = await showCupertinoModalPopup<ImageSource>(
+      context: context,
+      builder: (context) => CupertinoActionSheet(
+        actions: [
+          CupertinoActionSheetAction(
+            onPressed: () => Navigator.pop(context, ImageSource.camera),
+            child: const Text('Take Photo'),
+          ),
+          CupertinoActionSheetAction(
+            onPressed: () => Navigator.pop(context, ImageSource.gallery),
+            child: const Text('Choose from Gallery'),
+          ),
+        ],
+        cancelButton: CupertinoActionSheetAction(
+          isDestructiveAction: true,
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Cancel'),
+        ),
+      ),
+    );
+
+    if (source == null) return;
+
+    try {
+      final XFile? image = await _imagePicker.pickImage(source: source);
+      if (image != null) {
+        setState(() {
+          _selectedImage = File(image.path);
+          _isClassifying = true;
+        });
+
+        // Classify the image
+        final detectedDish = await MLFoodClassifierService.classifyFood(
+          _selectedImage!,
+        );
+
+        setState(() {
+          _isClassifying = false;
+          if (detectedDish != null) {
+            _dishController.text = detectedDish;
+          }
+        });
+      }
+    } catch (e) {
+      setState(() {
+        _isClassifying = false;
+      });
+      _showError('Failed to pick image: $e');
+    }
   }
 
   void _submitReview() async {
@@ -140,6 +200,36 @@ class _ReviewInputPageState extends State<ReviewInputPage> {
                     ),
                   );
                 }),
+              ),
+              const SizedBox(height: 32),
+              Text(
+                'What did you eat?',
+                style: CupertinoTheme.of(context).textTheme.navTitleTextStyle,
+              ),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  Expanded(
+                    child: CupertinoTextField(
+                      controller: _dishController,
+                      placeholder: 'Food name...',
+                      enabled: !_isClassifying,
+                      decoration: BoxDecoration(
+                        border: Border.all(color: CupertinoColors.systemGrey4),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  CupertinoButton(
+                    padding: const EdgeInsets.all(12),
+                    color: CupertinoColors.systemBlue,
+                    onPressed: _isClassifying ? null : _pickImage,
+                    child: _isClassifying
+                        ? const CupertinoActivityIndicator()
+                        : const Icon(CupertinoIcons.camera, size: 24),
+                  ),
+                ],
               ),
               const SizedBox(height: 32),
               Text(

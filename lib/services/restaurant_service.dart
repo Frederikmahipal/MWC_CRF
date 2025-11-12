@@ -16,6 +16,7 @@ class RestaurantService {
   static const Duration _cacheExpiry = Duration(hours: 6);
 
   Future<List<Restaurant>> getAllRestaurants() async {
+    print('getAllRestaurants');
     if (_cachedRestaurants != null &&
         _lastFetchTime != null &&
         DateTime.now().difference(_lastFetchTime!) < _cacheExpiry) {
@@ -26,7 +27,7 @@ class RestaurantService {
     try {
       _cachedRestaurants = await _overpassService
           .fetchCopenhagenRestaurants()
-          .timeout(const Duration(seconds: 15));
+          .timeout(const Duration(seconds: 45));
       _lastFetchTime = DateTime.now();
       return _cachedRestaurants!;
     } catch (e) {

@@ -43,9 +43,9 @@ class ReviewService {
       // Notify insights page to refresh (reviews and visits changed)
       InsightsRefreshNotifier().notifyRefresh(DataChangeType.reviews);
 
-      print('✅ Review added successfully');
+      print('Review added successfully');
     } catch (e) {
-      print('❌ Error adding review: $e');
+      print('Error adding review: $e');
       rethrow;
     }
   }
@@ -65,7 +65,7 @@ class ReviewService {
 
       return reviews;
     } catch (e) {
-      print('❌ Error getting restaurant reviews: $e');
+      print('Error getting restaurant reviews: $e');
       return [];
     }
   }
@@ -213,3 +213,5 @@ class ReviewService {
     }
   }
 }
+
+
