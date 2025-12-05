@@ -74,7 +74,7 @@ class RestaurantMapWidget extends StatelessWidget {
       final address = restaurant.address;
 
       Uri mapsUri;
-      
+
       if (Platform.isIOS) {
         // Use Apple Maps on iOS - use address if available, otherwise use coordinates with name
         if (address != null && address.isNotEmpty) {
@@ -82,34 +82,25 @@ class RestaurantMapWidget extends StatelessWidget {
           mapsUri = Uri(
             scheme: 'https',
             host: 'maps.apple.com',
-            queryParameters: {
-              'q': restaurantName,
-              'address': address,
-            },
+            queryParameters: {'q': restaurantName, 'address': address},
           );
         } else {
           mapsUri = Uri(
             scheme: 'https',
             host: 'maps.apple.com',
-            queryParameters: {
-              'q': restaurantName,
-              'll': '$lat,$lng',
-            },
+            queryParameters: {'q': restaurantName, 'll': '$lat,$lng'},
           );
         }
       } else {
         // Use Google Maps on Android - use name and coordinates
-        final query = address != null && address.isNotEmpty 
+        final query = address != null && address.isNotEmpty
             ? '$restaurantName, $address'
             : restaurantName;
         mapsUri = Uri(
           scheme: 'https',
           host: 'www.google.com',
           path: '/maps/search/',
-          queryParameters: {
-            'api': '1',
-            'query': query,
-          },
+          queryParameters: {'api': '1', 'query': query},
         );
       }
 
@@ -117,17 +108,14 @@ class RestaurantMapWidget extends StatelessWidget {
         await launchUrl(mapsUri, mode: LaunchMode.externalApplication);
       } else {
         // Fallback to web Google Maps
-        final query = address != null && address.isNotEmpty 
+        final query = address != null && address.isNotEmpty
             ? '$restaurantName, $address'
             : restaurantName;
         final webMapsUri = Uri(
           scheme: 'https',
           host: 'www.google.com',
           path: '/maps/search/',
-          queryParameters: {
-            'api': '1',
-            'query': query,
-          },
+          queryParameters: {'api': '1', 'query': query},
         );
         if (await canLaunchUrl(webMapsUri)) {
           await launchUrl(webMapsUri, mode: LaunchMode.externalApplication);

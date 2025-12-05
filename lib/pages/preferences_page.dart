@@ -112,12 +112,14 @@ class _PreferencesPageState extends State<PreferencesPage> {
                       ),
                     ),
                     CupertinoListTile(
-                      title: Text(Platform.isIOS ? 'Face ID Login' : 'Biometric Login'),
+                      title: Text(
+                        Platform.isIOS ? 'Face ID Login' : 'Biometric Login',
+                      ),
                       subtitle: Text(
                         _isFaceIDEnabled
-                            ? Platform.isIOS 
-                                ? 'Use Face ID for quick access'
-                                : 'Use biometric for quick access'
+                            ? Platform.isIOS
+                                  ? 'Use Face ID for quick access'
+                                  : 'Use biometric for quick access'
                             : 'Enter PIN manually to sign in',
                       ),
                       trailing: _isLoading

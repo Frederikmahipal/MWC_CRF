@@ -70,7 +70,7 @@ class _PinLoginPageState extends State<PinLoginPage> {
               ),
               const SizedBox(height: 16),
               Text(
-                Platform.isIOS 
+                Platform.isIOS
                     ? 'Use your PIN or Face ID to access your account'
                     : 'Use your PIN or Biometric to access your account',
                 style: CupertinoTheme.of(context).textTheme.textStyle.copyWith(

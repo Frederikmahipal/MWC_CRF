@@ -217,8 +217,8 @@ class _PinSetupPageState extends State<PinSetupPage> {
     if (!_isConfirming) {
       setState(() {
         _isConfirming = true;
-        _confirmPin = _pin; 
-        _pin = ''; 
+        _confirmPin = _pin;
+        _pin = '';
       });
     } else {
       if (_pin == _confirmPin) {

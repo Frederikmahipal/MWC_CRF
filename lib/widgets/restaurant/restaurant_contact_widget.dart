@@ -118,7 +118,7 @@ class RestaurantContactWidget extends StatelessWidget {
       // Remove any non-digit characters except +
       final cleanedNumber = phoneNumber.replaceAll(RegExp(r'[^\d+]'), '');
       final phoneUri = Uri.parse('tel:$cleanedNumber');
-      
+
       if (await canLaunchUrl(phoneUri)) {
         await launchUrl(phoneUri);
       } else {
@@ -133,7 +133,8 @@ class RestaurantContactWidget extends StatelessWidget {
     try {
       // Ensure URL has a scheme (http:// or https://)
       String urlString = website.trim();
-      if (!urlString.startsWith('http://') && !urlString.startsWith('https://')) {
+      if (!urlString.startsWith('http://') &&
+          !urlString.startsWith('https://')) {
         urlString = 'https://$urlString';
       }
 
