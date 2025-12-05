@@ -70,24 +70,6 @@ class RestaurantRecommendationCard extends StatelessWidget {
                       ),
                       const SizedBox(height: 4),
                     ],
-                    Row(
-                      children: [
-                        Icon(
-                          CupertinoIcons.star_fill,
-                          color: CupertinoColors.systemYellow,
-                          size: 14,
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          '${restaurant.averageRating.toStringAsFixed(1)}/5 (${restaurant.totalReviews} reviews)',
-                          style: TextStyle(
-                            color: AppSettings.getSecondaryTextColor(context),
-                            fontSize: 12,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 4),
                     _buildServiceIcons(context),
                   ],
                 ),

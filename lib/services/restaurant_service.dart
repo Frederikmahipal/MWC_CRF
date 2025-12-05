@@ -1,7 +1,7 @@
-import 'dart:math';
 import '../models/restaurant.dart';
-import 'overpass_service.dart';
-import 'review_service.dart';
+import 'places_api_service.dart';
+import '../repositories/local/database.dart' hide Restaurant;
+import '../repositories/local/restaurant_repository.dart';
 import 'package:geocoding/geocoding.dart';
 
 class RestaurantService {
@@ -9,68 +9,63 @@ class RestaurantService {
   factory RestaurantService() => _instance;
   RestaurantService._internal();
 
-  final OverpassService _overpassService = OverpassService();
+  final PlacesApiService _placesApiService = PlacesApiService();
+  late final AppDatabase _database;
+  late final RestaurantRepository _repository;
+  bool _isInitialized = false;
 
-  List<Restaurant>? _cachedRestaurants;
-  DateTime? _lastFetchTime;
-  static const Duration _cacheExpiry = Duration(hours: 6);
+  static const Duration _cacheExpiry = Duration(days: 80); 
+
+  Future<void> _ensureInitialized() async {
+    if (_isInitialized) return;
+    _database = AppDatabase();
+    _repository = RestaurantRepository(_database);
+    _isInitialized = true;
+  }
 
   Future<List<Restaurant>> getAllRestaurants() async {
-    print('getAllRestaurants');
-    if (_cachedRestaurants != null &&
-        _lastFetchTime != null &&
-        DateTime.now().difference(_lastFetchTime!) < _cacheExpiry) {
-      print('Returning fresh cached restaurants');
-      return _cachedRestaurants!;
-    }
+    await _ensureInitialized();
 
     try {
-      _cachedRestaurants = await _overpassService
-          .fetchCopenhagenRestaurants()
-          .timeout(const Duration(seconds: 45));
-      _lastFetchTime = DateTime.now();
-      return _cachedRestaurants!;
-    } catch (e) {
-      if (_cachedRestaurants != null) {
-        return _cachedRestaurants!;
+      final hasRestaurants = await _repository.hasRestaurants();
+      if (hasRestaurants) {
+        final lastUpdate = await _repository.getLastUpdateTime();
+        final isStale =
+            lastUpdate == null ||
+            DateTime.now().difference(lastUpdate) > _cacheExpiry;
+
+        if (!isStale) {
+          return await _repository.getAllRestaurants();
+        }
       }
+
+      final restaurants = await _placesApiService.fetchCopenhagenRestaurants();
+      if (restaurants.isNotEmpty) {
+        await _repository.saveRestaurants(restaurants);
+      } else if (hasRestaurants) {
+        return await _repository.getAllRestaurants();
+      }
+
+      return restaurants;
+    } catch (e) {
+      try {
+        final localRestaurants = await _repository.getAllRestaurants();
+        if (localRestaurants.isNotEmpty) return localRestaurants;
+      } catch (_) {}
       return [];
     }
   }
 
   Future<List<Restaurant>> getRestaurantsByCuisine(String cuisine) async {
-    final allRestaurants = await getAllRestaurants();
-    return allRestaurants.where((restaurant) {
-      return restaurant.cuisines.any(
-        (c) => c.toLowerCase().contains(cuisine.toLowerCase()),
-      );
-    }).toList();
+    await _ensureInitialized();
+    return await _repository.getRestaurantsByCuisine(cuisine);
   }
 
   Future<List<Restaurant>> searchRestaurants(String query) async {
-    if (query.isEmpty) return await getAllRestaurants();
-
-    final allRestaurants = await getAllRestaurants();
-    final lowercaseQuery = query.toLowerCase();
-
-    return allRestaurants.where((restaurant) {
-      if (restaurant.name.toLowerCase().contains(lowercaseQuery)) {
-        return true;
-      }
-
-      if (restaurant.cuisines.any(
-        (cuisine) => cuisine.toLowerCase().contains(lowercaseQuery),
-      )) {
-        return true;
-      }
-
-      if (restaurant.neighborhood?.toLowerCase().contains(lowercaseQuery) ==
-          true) {
-        return true;
-      }
-
-      return false;
-    }).toList();
+    await _ensureInitialized();
+    return query.isEmpty
+        ? await _repository.getAllRestaurants()
+        : await _repository.searchRestaurants(query);
   }
 
   Future<List<Restaurant>> getRestaurantsWithFeatures({
@@ -80,36 +75,14 @@ class RestaurantService {
     bool? hasDelivery,
     bool? hasWifi,
   }) async {
-    final allRestaurants = await getAllRestaurants();
-
-    return allRestaurants.where((restaurant) {
-      if (hasOutdoorSeating != null &&
-          restaurant.features.hasOutdoorSeating != hasOutdoorSeating) {
-        return false;
-      }
-
-      if (isWheelchairAccessible != null &&
-          restaurant.features.isWheelchairAccessible !=
-              isWheelchairAccessible) {
-        return false;
-      }
-
-      if (hasTakeaway != null &&
-          restaurant.features.hasTakeaway != hasTakeaway) {
-        return false;
-      }
-
-      if (hasDelivery != null &&
-          restaurant.features.hasDelivery != hasDelivery) {
-        return false;
-      }
-
-      if (hasWifi != null && restaurant.features.hasWifi != hasWifi) {
-        return false;
-      }
-
-      return true;
-    }).toList();
+    await _ensureInitialized();
+    return await _repository.getRestaurantsWithFeatures(
+      hasOutdoorSeating: hasOutdoorSeating,
+      isWheelchairAccessible: isWheelchairAccessible,
+      hasTakeaway: hasTakeaway,
+      hasDelivery: hasDelivery,
+      hasWifi: hasWifi,
+    );
   }
 
   Future<List<Restaurant>> getRestaurantsNearLocation(
@@ -117,147 +90,80 @@ class RestaurantService {
     double longitude,
     double radiusKm,
   ) async {
-    final allRestaurants = await getAllRestaurants();
-
-    return allRestaurants.where((restaurant) {
-      final distance = _calculateDistance(
-        latitude,
-        longitude,
-        restaurant.location.latitude,
-        restaurant.location.longitude,
-      );
-      return distance <= radiusKm;
-    }).toList();
+    await _ensureInitialized();
+    return await _repository.getRestaurantsNearLocation(
+      latitude,
+      longitude,
+      radiusKm,
+    );
   }
 
   Future<List<String>> getAvailableCuisines() async {
-    final allRestaurants = await getAllRestaurants();
-    final cuisines = <String>{};
-
-    for (final restaurant in allRestaurants) {
-      cuisines.addAll(restaurant.cuisines);
-    }
-
-    return cuisines.toList()..sort();
-  }
-
-  void clearCache() {
-    _cachedRestaurants = null;
-    _lastFetchTime = null;
-  }
-
-  List<Restaurant>? getCachedRestaurants() {
-    return _cachedRestaurants;
-  }
-
-  double _calculateDistance(
-    double lat1,
-    double lon1,
-    double lat2,
-    double lon2,
-  ) {
-    const double earthRadius = 6371; // Earths radius in kilometers
-
-    final dLat = _degreesToRadians(lat2 - lat1);
-    final dLon = _degreesToRadians(lon2 - lon1);
-
-    final a =
-        sin(dLat / 2) * sin(dLat / 2) +
-        cos(lat1) * cos(lat2) * sin(dLon / 2) * sin(dLon / 2);
-    final c = 2 * asin(sqrt(a));
-
-    return earthRadius * c;
-  }
-
-  double _degreesToRadians(double degrees) {
-    return degrees * (3.14159265359 / 180);
+    await _ensureInitialized();
+    return await _repository.getAvailableCuisines();
   }
 
   Future<String> convertToAddress(double lat, double lon) async {
     try {
-      List<Placemark> placemarks = await placemarkFromCoordinates(lat, lon);
-
+      final placemarks = await placemarkFromCoordinates(lat, lon);
       if (placemarks.isEmpty) {
         return '${lat.toStringAsFixed(4)}, ${lon.toStringAsFixed(4)}';
       }
 
       final placemark = placemarks.first;
-      final addressParts = <String>[];
+      final parts = [
+        placemark.street,
+        placemark.subLocality,
+        placemark.locality,
+        placemark.postalCode,
+      ].where((p) => p != null && p.isNotEmpty).toList();
 
-      final street = placemark.street;
-      final subLocality = placemark.subLocality;
-      final locality = placemark.locality;
-      final postalCode = placemark.postalCode;
-
-      if (street != null && street.isNotEmpty) {
-        addressParts.add(street);
-      }
-
-      if (subLocality != null && subLocality.isNotEmpty) {
-        addressParts.add(subLocality);
-      }
-
-      if (locality != null && locality.isNotEmpty) {
-        addressParts.add(locality);
-      }
-
-      if (postalCode != null && postalCode.isNotEmpty) {
-        addressParts.add(postalCode);
-      }
-
-      if (addressParts.isNotEmpty) {
-        return addressParts.join(', ');
-      }
-
-      return '${lat.toStringAsFixed(4)}, ${lon.toStringAsFixed(4)}';
+      return parts.isEmpty
+          ? '${lat.toStringAsFixed(4)}, ${lon.toStringAsFixed(4)}'
+          : parts.join(', ');
     } catch (e) {
       return '${lat.toStringAsFixed(4)}, ${lon.toStringAsFixed(4)}';
     }
   }
 
-  Future<List<Restaurant>> getAllRestaurantsWithRatings() async {
-    final restaurants = await getAllRestaurants();
-    final restaurantsWithRatings = <Restaurant>[];
+  Future<List<Restaurant>> getRestaurantsForAI({
+    String? cuisineFilter,
+    String? locationFilter,
+    bool? hasOutdoorSeating,
+    bool? isWheelchairAccessible,
+  }) async {
+    await _ensureInitialized();
+    var restaurants = await _repository.getAllRestaurants();
 
-    for (final restaurant in restaurants) {
-      try {
-        final ratingSummary = await ReviewService.getRestaurantRatingSummary(
-          restaurant.id,
+    if (cuisineFilter != null && cuisineFilter.isNotEmpty) {
+      restaurants = restaurants.where((r) {
+        return r.cuisines.any(
+          (c) => c.toLowerCase().contains(cuisineFilter.toLowerCase()),
         );
-        final updatedRestaurant = restaurant.copyWith(
-          averageRating: ratingSummary['averageRating'] as double,
-          totalReviews: ratingSummary['totalReviews'] as int,
-        );
-        restaurantsWithRatings.add(updatedRestaurant);
-      } catch (e) {
-        restaurantsWithRatings.add(restaurant);
-      }
+      }).toList();
     }
 
-    return restaurantsWithRatings;
+    if (hasOutdoorSeating != null) {
+      restaurants = restaurants
+          .where((r) => r.features.hasOutdoorSeating == hasOutdoorSeating)
+          .toList();
+    }
+
+    if (isWheelchairAccessible != null) {
+      restaurants = restaurants
+          .where(
+            (r) => r.features.isWheelchairAccessible == isWheelchairAccessible,
+          )
+          .toList();
+    }
+
+    return restaurants.take(50).toList();
   }
 
-  Future<List<Restaurant>> getRestaurantsForAI() async {
-    final restaurants = await getAllRestaurants();
-    final restaurantsWithRatings = <Restaurant>[];
-
-    final limitedRestaurants = restaurants.take(50).toList();
-
-    for (final restaurant in limitedRestaurants) {
-      try {
-        final averageRating = await ReviewService.getRestaurantAverageRating(
-          restaurant.id,
-        );
-        final updatedRestaurant = restaurant.copyWith(
-          averageRating: averageRating,
-        );
-        restaurantsWithRatings.add(updatedRestaurant);
-      } catch (e) {
-        // If rating calculation fails, use the original restaurant
-        restaurantsWithRatings.add(restaurant);
-      }
+  void dispose() {
+    if (_isInitialized) {
+      _database.close();
+      _isInitialized = false;
     }
-
-    return restaurantsWithRatings;
   }
 }

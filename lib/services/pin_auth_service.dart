@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 import 'dart:math';
 import 'package:crypto/crypto.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -177,8 +178,9 @@ class PinAuthService {
       final isAvailable = await isBiometricAvailable();
       if (!isAvailable) return false;
 
+      final biometricName = Platform.isIOS ? 'Face ID' : 'Biometric';
       final result = await _localAuth.authenticate(
-        localizedReason: 'Authenticate to enable Face ID',
+        localizedReason: 'Authenticate to enable $biometricName',
         options: const AuthenticationOptions(
           biometricOnly: true,
           stickyAuth: true,

@@ -1,6 +1,6 @@
 import 'package:flutter/cupertino.dart';
-import 'package:flutter_map/flutter_map.dart';
-import 'package:latlong2/latlong.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:latlong2/latlong.dart' as latlong;
 import '../core/app_settings.dart';
 import '../services/restaurant_service.dart';
 import '../models/restaurant.dart';
@@ -17,8 +17,8 @@ class SearchPage extends StatefulWidget {
 class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
   final TextEditingController _searchController = TextEditingController();
   final RestaurantService _restaurantService = RestaurantService();
-  final MapController _mapController = MapController();
-  LatLng? _userLocation;
+  GoogleMapController? _mapController;
+  latlong.LatLng? _userLocation;
   bool _isGettingLocation = false;
 
   List<Restaurant> _allRestaurants = [];
@@ -44,7 +44,7 @@ class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
   void dispose() {
     _searchController.dispose();
     _mapAnimationController.dispose();
-    _mapController.dispose(); // Add this
+    _mapController?.dispose();
     super.dispose();
   }
 
@@ -161,7 +161,10 @@ class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
         desiredAccuracy: LocationAccuracy.high,
       );
 
-      final userLocation = LatLng(position.latitude, position.longitude);
+      final userLocation = latlong.LatLng(
+        position.latitude,
+        position.longitude,
+      );
 
       setState(() {
         _userLocation = userLocation;
@@ -169,7 +172,12 @@ class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
       });
 
       // Animate map to user location
-      _mapController.move(userLocation, 15.0);
+      _mapController?.animateCamera(
+        CameraUpdate.newLatLngZoom(
+          LatLng(userLocation.latitude, userLocation.longitude),
+          15.0,
+        ),
+      );
     } catch (e) {
       print('Error getting location: $e');
       if (mounted) {
@@ -342,8 +350,6 @@ class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
   }
 
   Widget _buildMiniMap() {
-    final isDark = CupertinoTheme.brightnessOf(context) == Brightness.dark;
-
     return AnimatedContainer(
       duration: const Duration(milliseconds: 300),
       margin: const EdgeInsets.all(8),
@@ -352,26 +358,25 @@ class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
         borderRadius: BorderRadius.circular(12),
         child: Stack(
           children: [
-            FlutterMap(
-              options: MapOptions(
-                initialCenter: const LatLng(55.6761, 12.5683),
-                initialZoom: 13.0,
-                minZoom: 10.0,
-                maxZoom: 18.0,
-                interactionOptions: const InteractionOptions(
-                  flags: InteractiveFlag.pinchZoom | InteractiveFlag.drag,
-                ),
+            GoogleMap(
+              initialCameraPosition: const CameraPosition(
+                target: LatLng(
+                  55.6761,
+                  12.5683,
+                ), // Copenhagen - Google Maps LatLng
+                zoom: 13.0,
               ),
-              children: [
-                TileLayer(
-                  urlTemplate: isDark
-                      ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
-                      : 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                  subdomains: const ['a', 'b', 'c'],
-                  userAgentPackageName: 'com.example.crf',
-                ),
-                MarkerLayer(markers: _buildFilteredMarkers()),
-              ],
+              markers: _buildGoogleMapMarkers(),
+              mapType: MapType.normal,
+              zoomControlsEnabled: false,
+              myLocationButtonEnabled: false,
+              scrollGesturesEnabled: true,
+              zoomGesturesEnabled: true,
+              tiltGesturesEnabled: false,
+              rotateGesturesEnabled: false,
+              onMapCreated: (GoogleMapController controller) {
+                // Mini map doesn't need controller
+              },
             ),
             Positioned(
               top: 8,
@@ -395,62 +400,22 @@ class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
   }
 
   Widget _buildExpandedMap() {
-    final isDark = CupertinoTheme.brightnessOf(context) == Brightness.dark;
-
     return Stack(
       key: const ValueKey('expanded'),
       children: [
-        FlutterMap(
-          mapController: _mapController,
-          options: MapOptions(
-            initialCenter: const LatLng(55.6761, 12.5683),
-            initialZoom: 13.0,
-            minZoom: 10.0,
-            maxZoom: 18.0,
+        GoogleMap(
+          initialCameraPosition: const CameraPosition(
+            target: LatLng(55.6761, 12.5683), // Copenhagen - Google Maps LatLng
+            zoom: 13.0,
           ),
-          children: [
-            TileLayer(
-              urlTemplate: isDark
-                  ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
-                  : 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-              subdomains: const ['a', 'b', 'c'],
-              userAgentPackageName: 'com.example.crf',
-            ),
-            MarkerLayer(markers: _buildFilteredMarkers()),
-            // Add user location marker if available
-            if (_userLocation != null)
-              MarkerLayer(
-                markers: [
-                  Marker(
-                    point: _userLocation!,
-                    width: 30,
-                    height: 30,
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: AppSettings.accentColor,
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: CupertinoColors.white,
-                          width: 3,
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: CupertinoColors.black.withOpacity(0.3),
-                            blurRadius: 4,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                      child: const Icon(
-                        CupertinoIcons.person_fill,
-                        color: CupertinoColors.white,
-                        size: 16,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-          ],
+          markers: _buildGoogleMapMarkers(),
+          mapType: MapType.normal,
+          zoomControlsEnabled: true,
+          myLocationButtonEnabled: false,
+          myLocationEnabled: _userLocation != null,
+          onMapCreated: (GoogleMapController controller) {
+            _mapController = controller;
+          },
         ),
         Positioned(
           top: 50,
@@ -493,13 +458,30 @@ class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
     );
   }
 
-  List<Marker> _buildFilteredMarkers() {
-    return _filteredRestaurants.map((restaurant) {
-      return Marker(
-        point: restaurant.location,
-        width: 20,
-        height: 20,
-        child: GestureDetector(
+  Set<Marker> _buildGoogleMapMarkers() {
+    final markers = <Marker>{};
+    final primaryColor = AppSettings.getPrimaryColor(context);
+    final accentColor = AppSettings.accentColor;
+
+    // Convert Color to HSV hue for Google Maps markers
+    // Google Maps uses hue values 0-360, where 0=red, 120=green, 240=blue
+    final primaryHue = _colorToHue(primaryColor);
+    final accentHue = _colorToHue(accentColor);
+
+    // Add restaurant markers
+    for (final restaurant in _filteredRestaurants) {
+      markers.add(
+        Marker(
+          markerId: MarkerId(restaurant.id),
+          position: LatLng(
+            restaurant.location.latitude,
+            restaurant.location.longitude,
+          ),
+          icon: BitmapDescriptor.defaultMarkerWithHue(primaryHue),
+          infoWindow: InfoWindow(
+            title: restaurant.name,
+            snippet: restaurant.cuisines.join(', '),
+          ),
           onTap: () {
             print(
               '🔵 Clicked restaurant: ${restaurant.id} (${restaurant.name})',
@@ -513,28 +495,50 @@ class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
               ),
             );
           },
-          child: Container(
-            decoration: BoxDecoration(
-              color: AppSettings.primaryColor,
-              shape: BoxShape.circle,
-              border: Border.all(color: CupertinoColors.white, width: 1),
-              boxShadow: [
-                BoxShadow(
-                  color: CupertinoColors.black.withOpacity(0.2),
-                  blurRadius: 2,
-                  offset: const Offset(0, 1),
-                ),
-              ],
-            ),
-            child: const Icon(
-              CupertinoIcons.location_solid,
-              color: CupertinoColors.white,
-              size: 10,
-            ),
-          ),
         ),
       );
-    }).toList();
+    }
+
+    // Add user location marker if available
+    if (_userLocation != null) {
+      markers.add(
+        Marker(
+          markerId: const MarkerId('user_location'),
+          position: LatLng(_userLocation!.latitude, _userLocation!.longitude),
+          icon: BitmapDescriptor.defaultMarkerWithHue(accentHue),
+          infoWindow: const InfoWindow(title: 'Your Location'),
+        ),
+      );
+    }
+
+    return markers;
+  }
+
+  /// Convert Flutter Color to Google Maps hue value (0-360)
+  double _colorToHue(Color color) {
+    // Convert RGB to HSV
+    final r = color.red / 255.0;
+    final g = color.green / 255.0;
+    final b = color.blue / 255.0;
+
+    final max = r > g ? (r > b ? r : b) : (g > b ? g : b);
+    final min = r < g ? (r < b ? r : b) : (g < b ? g : b);
+    final delta = max - min;
+
+    double hue = 0.0;
+    if (delta != 0) {
+      if (max == r) {
+        hue = 60 * (((g - b) / delta) % 6);
+      } else if (max == g) {
+        hue = 60 * (((b - r) / delta) + 2);
+      } else {
+        hue = 60 * (((r - g) / delta) + 4);
+      }
+    }
+
+    // Ensure hue is in range 0-360
+    if (hue < 0) hue += 360;
+    return hue;
   }
 
   Widget _buildResultsList() {

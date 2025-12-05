@@ -1,5 +1,4 @@
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/user.dart';
 import '../repositories/remote/firestore_service.dart';
 import 'pin_auth_service.dart';
@@ -49,7 +48,7 @@ class AuthService {
         if (lastAuthTime != null) {
           final sessionDuration =
               DateTime.now().millisecondsSinceEpoch - lastAuthTime;
-          const sessionTimeout = 0; 
+          const sessionTimeout = 0;
           print(
             '🔍 Session duration: ${sessionDuration}ms, timeout: ${sessionTimeout}ms',
           );
@@ -125,7 +124,7 @@ class AuthService {
   static Future<void> loadUserForLogin(User user) async {
     try {
       _currentUser = user;
-      _isAuthenticated = false; 
+      _isAuthenticated = false;
 
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString(_keyCurrentUser, user.id);
@@ -187,7 +186,6 @@ class AuthService {
       print('Error during logout: $e');
     }
   }
-
 
   static Future<void> _clearUser() async {
     _currentUser = null;

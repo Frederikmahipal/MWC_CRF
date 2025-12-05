@@ -7,12 +7,8 @@ import 'core/app_state.dart';
 import 'core/theme_controller.dart';
 import 'navigation/main_navigation.dart';
 import 'pages/onboarding/welcome_page.dart';
-import 'pages/onboarding/pin_setup_page.dart';
 import 'pages/onboarding/pin_login_page.dart';
-import 'services/pin_auth_service.dart';
 import 'services/auth_service.dart';
-import 'utils/clear_database.dart';
-import 'utils/seed_database.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -20,10 +16,6 @@ void main() async {
   await Firebase.initializeApp();
 
   await AuthService.initialize();
-
- // await clearDatabase();
-
- //  await seedDatabase();
 
   runApp(const CopenhagenRestaurantFinder());
 }

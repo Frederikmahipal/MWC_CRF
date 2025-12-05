@@ -218,6 +218,30 @@ class $RestaurantsTable extends Restaurants
     ),
     defaultValue: const Constant(false),
   );
+  static const VerificationMeta _averageRatingMeta = const VerificationMeta(
+    'averageRating',
+  );
+  @override
+  late final GeneratedColumn<double> averageRating = GeneratedColumn<double>(
+    'average_rating',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0.0),
+  );
+  static const VerificationMeta _totalReviewsMeta = const VerificationMeta(
+    'totalReviews',
+  );
+  @override
+  late final GeneratedColumn<int> totalReviews = GeneratedColumn<int>(
+    'total_reviews',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
   static const VerificationMeta _createdAtMeta = const VerificationMeta(
     'createdAt',
   );
@@ -259,6 +283,8 @@ class $RestaurantsTable extends Restaurants
     hasDelivery,
     hasWifi,
     hasDriveThrough,
+    averageRating,
+    totalReviews,
     createdAt,
     updatedAt,
   ];
@@ -407,6 +433,24 @@ class $RestaurantsTable extends Restaurants
         ),
       );
     }
+    if (data.containsKey('average_rating')) {
+      context.handle(
+        _averageRatingMeta,
+        averageRating.isAcceptableOrUnknown(
+          data['average_rating']!,
+          _averageRatingMeta,
+        ),
+      );
+    }
+    if (data.containsKey('total_reviews')) {
+      context.handle(
+        _totalReviewsMeta,
+        totalReviews.isAcceptableOrUnknown(
+          data['total_reviews']!,
+          _totalReviewsMeta,
+        ),
+      );
+    }
     if (data.containsKey('created_at')) {
       context.handle(
         _createdAtMeta,
@@ -500,6 +544,14 @@ class $RestaurantsTable extends Restaurants
         DriftSqlType.bool,
         data['${effectivePrefix}has_drive_through'],
       )!,
+      averageRating: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}average_rating'],
+      )!,
+      totalReviews: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}total_reviews'],
+      )!,
       createdAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}created_at'],
@@ -535,6 +587,8 @@ class Restaurant extends DataClass implements Insertable<Restaurant> {
   final bool hasDelivery;
   final bool hasWifi;
   final bool hasDriveThrough;
+  final double averageRating;
+  final int totalReviews;
   final DateTime createdAt;
   final DateTime updatedAt;
   const Restaurant({
@@ -555,6 +609,8 @@ class Restaurant extends DataClass implements Insertable<Restaurant> {
     required this.hasDelivery,
     required this.hasWifi,
     required this.hasDriveThrough,
+    required this.averageRating,
+    required this.totalReviews,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -588,6 +644,8 @@ class Restaurant extends DataClass implements Insertable<Restaurant> {
     map['has_delivery'] = Variable<bool>(hasDelivery);
     map['has_wifi'] = Variable<bool>(hasWifi);
     map['has_drive_through'] = Variable<bool>(hasDriveThrough);
+    map['average_rating'] = Variable<double>(averageRating);
+    map['total_reviews'] = Variable<int>(totalReviews);
     map['created_at'] = Variable<DateTime>(createdAt);
     map['updated_at'] = Variable<DateTime>(updatedAt);
     return map;
@@ -622,6 +680,8 @@ class Restaurant extends DataClass implements Insertable<Restaurant> {
       hasDelivery: Value(hasDelivery),
       hasWifi: Value(hasWifi),
       hasDriveThrough: Value(hasDriveThrough),
+      averageRating: Value(averageRating),
+      totalReviews: Value(totalReviews),
       createdAt: Value(createdAt),
       updatedAt: Value(updatedAt),
     );
@@ -652,6 +712,8 @@ class Restaurant extends DataClass implements Insertable<Restaurant> {
       hasDelivery: serializer.fromJson<bool>(json['hasDelivery']),
       hasWifi: serializer.fromJson<bool>(json['hasWifi']),
       hasDriveThrough: serializer.fromJson<bool>(json['hasDriveThrough']),
+      averageRating: serializer.fromJson<double>(json['averageRating']),
+      totalReviews: serializer.fromJson<int>(json['totalReviews']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
     );
@@ -677,6 +739,8 @@ class Restaurant extends DataClass implements Insertable<Restaurant> {
       'hasDelivery': serializer.toJson<bool>(hasDelivery),
       'hasWifi': serializer.toJson<bool>(hasWifi),
       'hasDriveThrough': serializer.toJson<bool>(hasDriveThrough),
+      'averageRating': serializer.toJson<double>(averageRating),
+      'totalReviews': serializer.toJson<int>(totalReviews),
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
     };
@@ -700,6 +764,8 @@ class Restaurant extends DataClass implements Insertable<Restaurant> {
     bool? hasDelivery,
     bool? hasWifi,
     bool? hasDriveThrough,
+    double? averageRating,
+    int? totalReviews,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) => Restaurant(
@@ -721,6 +787,8 @@ class Restaurant extends DataClass implements Insertable<Restaurant> {
     hasDelivery: hasDelivery ?? this.hasDelivery,
     hasWifi: hasWifi ?? this.hasWifi,
     hasDriveThrough: hasDriveThrough ?? this.hasDriveThrough,
+    averageRating: averageRating ?? this.averageRating,
+    totalReviews: totalReviews ?? this.totalReviews,
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
   );
@@ -759,6 +827,12 @@ class Restaurant extends DataClass implements Insertable<Restaurant> {
       hasDriveThrough: data.hasDriveThrough.present
           ? data.hasDriveThrough.value
           : this.hasDriveThrough,
+      averageRating: data.averageRating.present
+          ? data.averageRating.value
+          : this.averageRating,
+      totalReviews: data.totalReviews.present
+          ? data.totalReviews.value
+          : this.totalReviews,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
     );
@@ -784,6 +858,8 @@ class Restaurant extends DataClass implements Insertable<Restaurant> {
           ..write('hasDelivery: $hasDelivery, ')
           ..write('hasWifi: $hasWifi, ')
           ..write('hasDriveThrough: $hasDriveThrough, ')
+          ..write('averageRating: $averageRating, ')
+          ..write('totalReviews: $totalReviews, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt')
           ..write(')'))
@@ -791,7 +867,7 @@ class Restaurant extends DataClass implements Insertable<Restaurant> {
   }
 
   @override
-  int get hashCode => Object.hash(
+  int get hashCode => Object.hashAll([
     id,
     name,
     cuisines,
@@ -809,9 +885,11 @@ class Restaurant extends DataClass implements Insertable<Restaurant> {
     hasDelivery,
     hasWifi,
     hasDriveThrough,
+    averageRating,
+    totalReviews,
     createdAt,
     updatedAt,
-  );
+  ]);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -833,6 +911,8 @@ class Restaurant extends DataClass implements Insertable<Restaurant> {
           other.hasDelivery == this.hasDelivery &&
           other.hasWifi == this.hasWifi &&
           other.hasDriveThrough == this.hasDriveThrough &&
+          other.averageRating == this.averageRating &&
+          other.totalReviews == this.totalReviews &&
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt);
 }
@@ -855,6 +935,8 @@ class RestaurantsCompanion extends UpdateCompanion<Restaurant> {
   final Value<bool> hasDelivery;
   final Value<bool> hasWifi;
   final Value<bool> hasDriveThrough;
+  final Value<double> averageRating;
+  final Value<int> totalReviews;
   final Value<DateTime> createdAt;
   final Value<DateTime> updatedAt;
   final Value<int> rowid;
@@ -876,6 +958,8 @@ class RestaurantsCompanion extends UpdateCompanion<Restaurant> {
     this.hasDelivery = const Value.absent(),
     this.hasWifi = const Value.absent(),
     this.hasDriveThrough = const Value.absent(),
+    this.averageRating = const Value.absent(),
+    this.totalReviews = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -898,6 +982,8 @@ class RestaurantsCompanion extends UpdateCompanion<Restaurant> {
     this.hasDelivery = const Value.absent(),
     this.hasWifi = const Value.absent(),
     this.hasDriveThrough = const Value.absent(),
+    this.averageRating = const Value.absent(),
+    this.totalReviews = const Value.absent(),
     required DateTime createdAt,
     required DateTime updatedAt,
     this.rowid = const Value.absent(),
@@ -926,6 +1012,8 @@ class RestaurantsCompanion extends UpdateCompanion<Restaurant> {
     Expression<bool>? hasDelivery,
     Expression<bool>? hasWifi,
     Expression<bool>? hasDriveThrough,
+    Expression<double>? averageRating,
+    Expression<int>? totalReviews,
     Expression<DateTime>? createdAt,
     Expression<DateTime>? updatedAt,
     Expression<int>? rowid,
@@ -949,6 +1037,8 @@ class RestaurantsCompanion extends UpdateCompanion<Restaurant> {
       if (hasDelivery != null) 'has_delivery': hasDelivery,
       if (hasWifi != null) 'has_wifi': hasWifi,
       if (hasDriveThrough != null) 'has_drive_through': hasDriveThrough,
+      if (averageRating != null) 'average_rating': averageRating,
+      if (totalReviews != null) 'total_reviews': totalReviews,
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
       if (rowid != null) 'rowid': rowid,
@@ -973,6 +1063,8 @@ class RestaurantsCompanion extends UpdateCompanion<Restaurant> {
     Value<bool>? hasDelivery,
     Value<bool>? hasWifi,
     Value<bool>? hasDriveThrough,
+    Value<double>? averageRating,
+    Value<int>? totalReviews,
     Value<DateTime>? createdAt,
     Value<DateTime>? updatedAt,
     Value<int>? rowid,
@@ -996,6 +1088,8 @@ class RestaurantsCompanion extends UpdateCompanion<Restaurant> {
       hasDelivery: hasDelivery ?? this.hasDelivery,
       hasWifi: hasWifi ?? this.hasWifi,
       hasDriveThrough: hasDriveThrough ?? this.hasDriveThrough,
+      averageRating: averageRating ?? this.averageRating,
+      totalReviews: totalReviews ?? this.totalReviews,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       rowid: rowid ?? this.rowid,
@@ -1058,6 +1152,12 @@ class RestaurantsCompanion extends UpdateCompanion<Restaurant> {
     if (hasDriveThrough.present) {
       map['has_drive_through'] = Variable<bool>(hasDriveThrough.value);
     }
+    if (averageRating.present) {
+      map['average_rating'] = Variable<double>(averageRating.value);
+    }
+    if (totalReviews.present) {
+      map['total_reviews'] = Variable<int>(totalReviews.value);
+    }
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
     }
@@ -1090,6 +1190,8 @@ class RestaurantsCompanion extends UpdateCompanion<Restaurant> {
           ..write('hasDelivery: $hasDelivery, ')
           ..write('hasWifi: $hasWifi, ')
           ..write('hasDriveThrough: $hasDriveThrough, ')
+          ..write('averageRating: $averageRating, ')
+          ..write('totalReviews: $totalReviews, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('rowid: $rowid')
@@ -1128,6 +1230,8 @@ typedef $$RestaurantsTableCreateCompanionBuilder =
       Value<bool> hasDelivery,
       Value<bool> hasWifi,
       Value<bool> hasDriveThrough,
+      Value<double> averageRating,
+      Value<int> totalReviews,
       required DateTime createdAt,
       required DateTime updatedAt,
       Value<int> rowid,
@@ -1151,6 +1255,8 @@ typedef $$RestaurantsTableUpdateCompanionBuilder =
       Value<bool> hasDelivery,
       Value<bool> hasWifi,
       Value<bool> hasDriveThrough,
+      Value<double> averageRating,
+      Value<int> totalReviews,
       Value<DateTime> createdAt,
       Value<DateTime> updatedAt,
       Value<int> rowid,
@@ -1247,6 +1353,16 @@ class $$RestaurantsTableFilterComposer
 
   ColumnFilters<bool> get hasDriveThrough => $composableBuilder(
     column: $table.hasDriveThrough,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get averageRating => $composableBuilder(
+    column: $table.averageRating,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get totalReviews => $composableBuilder(
+    column: $table.totalReviews,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -1355,6 +1471,16 @@ class $$RestaurantsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<double> get averageRating => $composableBuilder(
+    column: $table.averageRating,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get totalReviews => $composableBuilder(
+    column: $table.totalReviews,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<DateTime> get createdAt => $composableBuilder(
     column: $table.createdAt,
     builder: (column) => ColumnOrderings(column),
@@ -1442,6 +1568,16 @@ class $$RestaurantsTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<double> get averageRating => $composableBuilder(
+    column: $table.averageRating,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get totalReviews => $composableBuilder(
+    column: $table.totalReviews,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
 
@@ -1497,6 +1633,8 @@ class $$RestaurantsTableTableManager
                 Value<bool> hasDelivery = const Value.absent(),
                 Value<bool> hasWifi = const Value.absent(),
                 Value<bool> hasDriveThrough = const Value.absent(),
+                Value<double> averageRating = const Value.absent(),
+                Value<int> totalReviews = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
@@ -1518,6 +1656,8 @@ class $$RestaurantsTableTableManager
                 hasDelivery: hasDelivery,
                 hasWifi: hasWifi,
                 hasDriveThrough: hasDriveThrough,
+                averageRating: averageRating,
+                totalReviews: totalReviews,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 rowid: rowid,
@@ -1541,6 +1681,8 @@ class $$RestaurantsTableTableManager
                 Value<bool> hasDelivery = const Value.absent(),
                 Value<bool> hasWifi = const Value.absent(),
                 Value<bool> hasDriveThrough = const Value.absent(),
+                Value<double> averageRating = const Value.absent(),
+                Value<int> totalReviews = const Value.absent(),
                 required DateTime createdAt,
                 required DateTime updatedAt,
                 Value<int> rowid = const Value.absent(),
@@ -1562,6 +1704,8 @@ class $$RestaurantsTableTableManager
                 hasDelivery: hasDelivery,
                 hasWifi: hasWifi,
                 hasDriveThrough: hasDriveThrough,
+                averageRating: averageRating,
+                totalReviews: totalReviews,
                 createdAt: createdAt,
                 updatedAt: updatedAt,
                 rowid: rowid,

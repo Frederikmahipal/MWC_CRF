@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/cupertino.dart';
 import 'package:provider/provider.dart';
 import '../core/app_settings.dart';
@@ -111,10 +112,12 @@ class _PreferencesPageState extends State<PreferencesPage> {
                       ),
                     ),
                     CupertinoListTile(
-                      title: const Text('Face ID Login'),
+                      title: Text(Platform.isIOS ? 'Face ID Login' : 'Biometric Login'),
                       subtitle: Text(
                         _isFaceIDEnabled
-                            ? 'Use Face ID for quick access'
+                            ? Platform.isIOS 
+                                ? 'Use Face ID for quick access'
+                                : 'Use biometric for quick access'
                             : 'Enter PIN manually to sign in',
                       ),
                       trailing: _isLoading
@@ -228,13 +231,16 @@ class _PreferencesPageState extends State<PreferencesPage> {
             _isFaceIDEnabled = true;
           });
         } else {
-          _showError('Failed to enable Face ID. Please try again.');
+          final biometricName = Platform.isIOS ? 'Face ID' : 'Biometric';
+          _showError('Failed to enable $biometricName. Please try again.');
         }
       } else {
-        _showError('Face ID authentication failed. Please try again.');
+        final biometricName = Platform.isIOS ? 'Face ID' : 'Biometric';
+        _showError('$biometricName authentication failed. Please try again.');
       }
     } catch (e) {
-      _showError('Error enabling Face ID: $e');
+      final biometricName = Platform.isIOS ? 'Face ID' : 'Biometric';
+      _showError('Error enabling $biometricName: $e');
     } finally {
       if (mounted) {
         setState(() {
@@ -257,10 +263,12 @@ class _PreferencesPageState extends State<PreferencesPage> {
           _isFaceIDEnabled = false;
         });
       } else {
-        _showError('Failed to disable Face ID. Please try again.');
+        final biometricName = Platform.isIOS ? 'Face ID' : 'Biometric';
+        _showError('Failed to disable $biometricName. Please try again.');
       }
     } catch (e) {
-      _showError('Error disabling Face ID: $e');
+      final biometricName = Platform.isIOS ? 'Face ID' : 'Biometric';
+      _showError('Error disabling $biometricName: $e');
     } finally {
       if (mounted) {
         setState(() {

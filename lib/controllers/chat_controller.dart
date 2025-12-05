@@ -1,13 +1,15 @@
+import 'dart:io';
 import 'package:flutter/foundation.dart';
 import '../models/restaurant.dart';
 import '../states/chat_state.dart';
 import '../services/openrouter_service.dart';
-import '../services/restaurant_service.dart';
-import '../services/review_service.dart';
+import '../services/restaurant_filter_service.dart';
+import '../services/ml_food_search_service.dart';
 
 class ChatController extends ChangeNotifier {
-  final OpenRouterService _aiService = OpenRouterService();
-  final RestaurantService _restaurantService = RestaurantService();
+  final OpenRouterService _openRouterService = OpenRouterService();
+  final RestaurantFilterService _filterService = RestaurantFilterService();
+  final MLFoodSearchService _mlFoodSearchService = MLFoodSearchService();
 
   ChatState _state = const ChatState();
   ChatState get state => _state;
@@ -15,7 +17,6 @@ class ChatController extends ChangeNotifier {
   List<ChatMessage> get messages => _state.messages;
   bool get isLoading => _state.isLoading;
   String? get error => _state.error;
-  List<Restaurant> get restaurants => _state.restaurants;
   bool get isLoadingRestaurants => _state.isLoadingRestaurants;
 
   ChatController() {
@@ -24,30 +25,8 @@ class ChatController extends ChangeNotifier {
 
   Future<void> _initializeChat() async {
     _addWelcomeMessage();
-    await _loadRestaurants();
-  }
-
-  Future<void> _loadRestaurants() async {
-    _updateState(_state.copyWith(isLoadingRestaurants: true, error: null));
-
-    try {
-      final restaurants = await _restaurantService.getAllRestaurants();
-
-      _updateState(
-        _state.copyWith(
-          restaurants: restaurants,
-          isLoadingRestaurants: false,
-          error: null,
-        ),
-      );
-    } catch (e) {
-      _updateState(
-        _state.copyWith(
-          isLoadingRestaurants: false,
-          error: 'Failed to load restaurants: $e',
-        ),
-      );
-    }
+    // Don't load all restaurants upfront - we'll filter on-demand
+    _updateState(_state.copyWith(isLoadingRestaurants: false));
   }
 
   void _addWelcomeMessage() {
@@ -66,10 +45,6 @@ class ChatController extends ChangeNotifier {
   Future<void> sendMessage(String messageText) async {
     if (messageText.trim().isEmpty) return;
 
-    if (_state.restaurants.isEmpty) {
-      return;
-    }
-
     final userMessage = ChatMessage(
       text: messageText.trim(),
       isUser: true,
@@ -85,13 +60,37 @@ class ChatController extends ChangeNotifier {
     );
 
     try {
-      final aiResponse = await _aiService.getRestaurantRecommendations(
+      // Pre-filter restaurants based on user query
+      final filteredRestaurants = await _filterService
+          .getFilteredRestaurantsForAI(messageText);
+
+      if (filteredRestaurants.isEmpty) {
+        final errorMessage = ChatMessage(
+          text:
+              "I couldn't find any restaurants matching your request. Please try a different search.",
+          isUser: false,
+          timestamp: DateTime.now(),
+        );
+
+        _updateState(
+          _state.copyWith(
+            messages: [..._state.messages, errorMessage],
+            isLoading: false,
+            error: null,
+          ),
+        );
+        return;
+      }
+
+      // Send filtered restaurants to AI
+      final aiResponse = await _openRouterService.getRestaurantRecommendations(
         messageText,
-        _state.restaurants,
+        filteredRestaurants,
       );
 
-      final recommendedRestaurants = await _extractRestaurantRecommendations(
+      final recommendedRestaurants = _extractRestaurantRecommendations(
         aiResponse,
+        filteredRestaurants,
       );
 
       final aiMessage = ChatMessage(
@@ -109,8 +108,23 @@ class ChatController extends ChangeNotifier {
         ),
       );
     } catch (e) {
+      print('AI Error: $e'); // Simple debug
+      String errorText =
+          "Sorry, I couldn't process your request. Please try again.";
+      if (e.toString().contains('API key not configured')) {
+        errorText = "API key not configured. Please check your settings.";
+      } else if (e.toString().contains('timed out') ||
+          e.toString().contains('TimeoutException')) {
+        errorText = "Request timed out. Please try again.";
+      } else if (e.toString().contains('401') || e.toString().contains('403')) {
+        errorText = "API authentication failed. Please check your API key.";
+      } else if (e.toString().contains('404') ||
+          e.toString().contains('model')) {
+        errorText = "Model not available. Please try again later.";
+      }
+
       final errorMessage = ChatMessage(
-        text: "Sorry, I encountered an error. Please try again.",
+        text: errorText,
         isUser: false,
         timestamp: DateTime.now(),
       );
@@ -119,27 +133,37 @@ class ChatController extends ChangeNotifier {
         _state.copyWith(
           messages: [..._state.messages, errorMessage],
           isLoading: false,
-          error: e.toString(),
+          error: null,
         ),
       );
     }
   }
 
-  Future<List<Restaurant>> _extractRestaurantRecommendations(
+  /// Extract restaurant recommendations from AI response
+  List<Restaurant> _extractRestaurantRecommendations(
     String aiResponse,
-  ) async {
+    List<Restaurant> availableRestaurants,
+  ) {
     final List<Restaurant> recommendations = [];
     final aiResponseLower = aiResponse.toLowerCase();
 
-    // exact name matches
-    for (final restaurant in _state.restaurants) {
-      final restaurantName = restaurant.name.toLowerCase();
-      if (aiResponseLower.contains(restaurantName)) {
-        recommendations.add(restaurant);
+    // Use restaurants as-is (no sorting needed)
+    final sortedRestaurants = availableRestaurants;
+
+    // Create a map for faster lookup
+    final restaurantMap = {
+      for (var r in sortedRestaurants) r.name.toLowerCase(): r,
+    };
+
+    // Exact name matches
+    for (final entry in restaurantMap.entries) {
+      if (aiResponseLower.contains(entry.key)) {
+        recommendations.add(entry.value);
       }
     }
 
     if (recommendations.isNotEmpty) {
+      // Remove duplicates and limit to 3
       final uniqueRecommendations = recommendations
           .fold<Map<String, Restaurant>>({}, (map, restaurant) {
             map[restaurant.id] = restaurant;
@@ -148,16 +172,16 @@ class ChatController extends ChangeNotifier {
           .values
           .toList();
 
-      return await _calculateRatingsForRestaurants(uniqueRecommendations);
+      return uniqueRecommendations.take(3).toList();
     }
 
-    // partial word matches
-    for (final restaurant in _state.restaurants) {
+    // Partial word matches
+    for (final restaurant in sortedRestaurants) {
       final restaurantName = restaurant.name.toLowerCase();
       final words = restaurantName.split(' ');
 
       for (final word in words) {
-        if (word.length > 2 && aiResponseLower.contains(word)) {
+        if (word.length > 3 && aiResponseLower.contains(word)) {
           recommendations.add(restaurant);
           break;
         }
@@ -165,7 +189,7 @@ class ChatController extends ChangeNotifier {
     }
 
     if (recommendations.isNotEmpty) {
-      // Remove duplicates based on restaurant ID
+      // Remove duplicates and limit to 3
       final uniqueRecommendations = recommendations
           .fold<Map<String, Restaurant>>({}, (map, restaurant) {
             map[restaurant.id] = restaurant;
@@ -174,95 +198,17 @@ class ChatController extends ChangeNotifier {
           .values
           .toList();
 
-      return await _calculateRatingsForRestaurants(uniqueRecommendations);
+      return uniqueRecommendations.take(3).toList();
     }
 
-    // cuisine-based matching
-    final cuisineType = _extractCuisineType(aiResponseLower);
-    if (cuisineType.isNotEmpty) {
-      for (final restaurant in _state.restaurants) {
-        final restaurantCuisines = restaurant.cuisines.join(' ').toLowerCase();
-        if (restaurantCuisines.contains(cuisineType)) {
-          recommendations.add(restaurant);
-        }
-      }
+    // If no matches found, return top rated restaurants as fallback
+    // Shuffle slightly to add variety if we have enough options
+    if (sortedRestaurants.length > 5) {
+      final topRated = sortedRestaurants.take(10).toList();
+      topRated.shuffle();
+      return topRated.take(3).toList();
     }
-
-    if (recommendations.isNotEmpty) {
-      final uniqueRecommendations = recommendations
-          .fold<Map<String, Restaurant>>({}, (map, restaurant) {
-            map[restaurant.id] = restaurant;
-            return map;
-          })
-          .values
-          .toList();
-
-      return await _calculateRatingsForRestaurants(uniqueRecommendations);
-    }
-
-    return [];
-  }
-
-  String _extractCuisineType(String aiResponseLower) {
-    final cuisineMap = {
-      'indian': 'indian',
-      'italian': 'italian',
-      'pizza': 'italian',
-      'chinese': 'chinese',
-      'asian': 'chinese',
-      'japanese': 'japanese',
-      'sushi': 'japanese',
-      'mexican': 'mexican',
-      'french': 'french',
-      'steak': 'steak',
-      'meat': 'steak',
-      'burger': 'burger',
-      'coffee': 'coffee',
-      'cafe': 'coffee',
-    };
-
-    for (final entry in cuisineMap.entries) {
-      if (aiResponseLower.contains(entry.key)) {
-        return entry.value;
-      }
-    }
-
-    return '';
-  }
-
-  Future<List<Restaurant>> _calculateRatingsForRestaurants(
-    List<Restaurant> restaurants,
-  ) async {
-    final List<Restaurant> restaurantsWithRatings = [];
-
-    for (final restaurant in restaurants) {
-      try {
-        // Calculate real rating from reviews
-        final ratingSummary = await ReviewService.getRestaurantRatingSummary(
-          restaurant.id,
-        );
-
-        final restaurantWithRating = Restaurant(
-          id: restaurant.id,
-          name: restaurant.name,
-          cuisines: restaurant.cuisines,
-          location: restaurant.location,
-          neighborhood: restaurant.neighborhood,
-          phone: restaurant.phone,
-          website: restaurant.website,
-          openingHours: restaurant.openingHours,
-          features: restaurant.features,
-          averageRating: ratingSummary['averageRating'] ?? 0.0,
-          totalReviews: ratingSummary['totalReviews'] ?? 0,
-        );
-
-        restaurantsWithRatings.add(restaurantWithRating);
-      } catch (e) {
-        restaurantsWithRatings.add(restaurant);
-      }
-    }
-
-    return restaurantsWithRatings;
+    return sortedRestaurants.take(3).toList();
   }
 
   void clearError() {
@@ -272,6 +218,128 @@ class ChatController extends ChangeNotifier {
   void reset() {
     _state = const ChatState();
     _initializeChat();
+  }
+
+  Future<void> sendImageMessage(File imageFile) async {
+    // Show user message with image indicator
+    final userMessage = ChatMessage(
+      text: '📷 [Photo]',
+      isUser: true,
+      timestamp: DateTime.now(),
+    );
+
+    _updateState(
+      _state.copyWith(
+        messages: [..._state.messages, userMessage],
+        isLoading: true,
+        error: null,
+      ),
+    );
+
+    try {
+      // Use ML food search service to classify and map to cuisine
+      final searchResult = await _mlFoodSearchService.searchByFoodImage(
+        imageFile,
+      );
+
+      if (!searchResult.success || searchResult.detectedFood == null) {
+        final errorMessage = ChatMessage(
+          text:
+              searchResult.error ??
+              "I couldn't identify the food in this image. Please try another photo or describe what you're looking for.",
+          isUser: false,
+          timestamp: DateTime.now(),
+        );
+
+        _updateState(
+          _state.copyWith(
+            messages: [..._state.messages, errorMessage],
+            isLoading: false,
+            error: null,
+          ),
+        );
+        return;
+      }
+
+      final detectedFood = searchResult.detectedFood!;
+      final cuisineType = searchResult.cuisineType ?? detectedFood;
+
+      // Use restaurants from search result, or filter if needed
+      List<Restaurant> filteredRestaurants = searchResult.restaurants;
+
+      // If no restaurants found from cuisine search, try filtering by query
+      if (filteredRestaurants.isEmpty) {
+        final query = "I want to find restaurants that serve $detectedFood";
+        filteredRestaurants = await _filterService.getFilteredRestaurantsForAI(
+          query,
+        );
+      }
+
+      if (filteredRestaurants.isEmpty) {
+        final cuisineText = cuisineType != detectedFood
+            ? " ($cuisineType cuisine)"
+            : "";
+        final errorMessage = ChatMessage(
+          text:
+              "I detected $detectedFood$cuisineText in your photo, but couldn't find any restaurants serving that. Please try a different photo.",
+          isUser: false,
+          timestamp: DateTime.now(),
+        );
+
+        _updateState(
+          _state.copyWith(
+            messages: [..._state.messages, errorMessage],
+            isLoading: false,
+            error: null,
+          ),
+        );
+        return;
+      }
+
+      // Send to AI with context about the detected food and cuisine
+      final cuisineText = cuisineType != detectedFood
+          ? " ($cuisineType cuisine)"
+          : "";
+      final aiResponse = await _openRouterService.getRestaurantRecommendations(
+        "I'm looking for restaurants that serve $detectedFood$cuisineText",
+        filteredRestaurants,
+      );
+
+      final recommendedRestaurants = _extractRestaurantRecommendations(
+        aiResponse,
+        filteredRestaurants,
+      );
+
+      final aiMessage = ChatMessage(
+        text: aiResponse,
+        isUser: false,
+        timestamp: DateTime.now(),
+        recommendedRestaurants: recommendedRestaurants,
+      );
+
+      _updateState(
+        _state.copyWith(
+          messages: [..._state.messages, aiMessage],
+          isLoading: false,
+          error: null,
+        ),
+      );
+    } catch (e) {
+      print('Image processing error: $e');
+      final errorMessage = ChatMessage(
+        text: "Sorry, I couldn't process the image. Please try again.",
+        isUser: false,
+        timestamp: DateTime.now(),
+      );
+
+      _updateState(
+        _state.copyWith(
+          messages: [..._state.messages, errorMessage],
+          isLoading: false,
+          error: null,
+        ),
+      );
+    }
   }
 
   void _updateState(ChatState newState) {

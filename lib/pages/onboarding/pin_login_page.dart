@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -69,7 +70,9 @@ class _PinLoginPageState extends State<PinLoginPage> {
               ),
               const SizedBox(height: 16),
               Text(
-                'Use your PIN or Face ID to access your account',
+                Platform.isIOS 
+                    ? 'Use your PIN or Face ID to access your account'
+                    : 'Use your PIN or Biometric to access your account',
                 style: CupertinoTheme.of(context).textTheme.textStyle.copyWith(
                   color: AppSettings.getSecondaryTextColor(context),
                 ),
@@ -344,7 +347,7 @@ class _PinLoginPageState extends State<PinLoginPage> {
           ),
           CupertinoDialogAction(
             isDefaultAction: true,
-            child: const Text('Try Face ID'),
+            child: Text(Platform.isIOS ? 'Try Face ID' : 'Try Biometric'),
             onPressed: () {
               Navigator.of(context).pop();
               _tryBiometricAuth();

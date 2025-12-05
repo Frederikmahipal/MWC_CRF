@@ -60,8 +60,7 @@ class AppSettings {
   static const String appName = 'Copenhagen Restaurant Finder';
   static const String appVersion = '1.0.0';
 
-  static const String overpassApiUrl =
-      'https://overpass-api.de/api/interpreter';
+
   static const double defaultMapZoom = 13.0;
   static const double defaultSearchRadius = 5.0;
 

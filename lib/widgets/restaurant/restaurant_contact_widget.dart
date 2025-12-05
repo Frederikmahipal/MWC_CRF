@@ -44,7 +44,7 @@ class RestaurantContactWidget extends StatelessWidget {
               context,
               CupertinoIcons.globe,
               'Visit Website',
-              restaurant.website!,
+              _getDisplayUrl(restaurant.website!),
               () => _openWebsite(context, restaurant.website!),
             ),
           ],
@@ -95,23 +95,85 @@ class RestaurantContactWidget extends StatelessWidget {
     );
   }
 
-  void _makePhoneCall(String phoneNumber) {
-    // TODO: Implement phone call functionality
-    print('Calling: $phoneNumber');
+  String _getDisplayUrl(String url) {
+    try {
+      // Remove http:// or https://
+      String cleanUrl = url.replaceFirst(RegExp(r'^https?://'), '');
+      // Remove www.
+      cleanUrl = cleanUrl.replaceFirst(RegExp(r'^www\.'), '');
+      // Remove query parameters and fragments
+      cleanUrl = cleanUrl.split('?').first;
+      cleanUrl = cleanUrl.split('#').first;
+      // Remove trailing slash
+      cleanUrl = cleanUrl.replaceFirst(RegExp(r'/$'), '');
+      return cleanUrl;
+    } catch (e) {
+      // If parsing fails, return original
+      return url;
+    }
+  }
+
+  void _makePhoneCall(String phoneNumber) async {
+    try {
+      // Remove any non-digit characters except +
+      final cleanedNumber = phoneNumber.replaceAll(RegExp(r'[^\d+]'), '');
+      final phoneUri = Uri.parse('tel:$cleanedNumber');
+      
+      if (await canLaunchUrl(phoneUri)) {
+        await launchUrl(phoneUri);
+      } else {
+        print('Could not launch phone call: $phoneNumber');
+      }
+    } catch (e) {
+      print('Error making phone call: $e');
+    }
   }
 
   void _openWebsite(BuildContext context, String website) async {
     try {
-      final Uri url = Uri.parse(website);
+      // Ensure URL has a scheme (http:// or https://)
+      String urlString = website.trim();
+      if (!urlString.startsWith('http://') && !urlString.startsWith('https://')) {
+        urlString = 'https://$urlString';
+      }
 
-      if (await canLaunchUrl(url)) {
+      final Uri url = Uri.parse(urlString);
+
+      // Try to launch URL - on Android 11+, canLaunchUrl might return false
+      // even if the URL can be opened, so we try anyway
+      try {
         await launchUrl(url, mode: LaunchMode.externalApplication);
-      } else {
+      } catch (e) {
+        // If launchUrl fails, try with platformDefault mode
+        try {
+          await launchUrl(url, mode: LaunchMode.platformDefault);
+        } catch (e2) {
+          print('Error opening website: $e2');
+          if (context.mounted) {
+            showCupertinoDialog(
+              context: context,
+              builder: (context) => CupertinoAlertDialog(
+                title: const Text('Error'),
+                content: Text('Could not open website: $urlString'),
+                actions: [
+                  CupertinoDialogAction(
+                    child: const Text('OK'),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                ],
+              ),
+            );
+          }
+        }
+      }
+    } catch (e) {
+      print('Error opening website: $e');
+      if (context.mounted) {
         showCupertinoDialog(
           context: context,
           builder: (context) => CupertinoAlertDialog(
             title: const Text('Error'),
-            content: const Text('Could not open website'),
+            content: Text('Invalid URL: $website'),
             actions: [
               CupertinoDialogAction(
                 child: const Text('OK'),
@@ -121,21 +183,6 @@ class RestaurantContactWidget extends StatelessWidget {
           ),
         );
       }
-    } catch (e) {
-      print('Error opening website: $e');
-      showCupertinoDialog(
-        context: context,
-        builder: (context) => CupertinoAlertDialog(
-          title: const Text('Error'),
-          content: Text('Invalid URL: $website'),
-          actions: [
-            CupertinoDialogAction(
-              child: const Text('OK'),
-              onPressed: () => Navigator.pop(context),
-            ),
-          ],
-        ),
-      );
     }
   }
 }

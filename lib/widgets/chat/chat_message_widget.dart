@@ -88,9 +88,7 @@ class ChatMessageWidget extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 8),
-              Expanded(
-                child: _buildAIResponseWithCards(context),
-              ),
+              Expanded(child: _buildAIResponseWithCards(context)),
             ],
           ),
         ],

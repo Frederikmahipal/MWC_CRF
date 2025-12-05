@@ -101,7 +101,9 @@ class _AIChatPageState extends State<AIChatPage> {
                         return ChatMessageWidget(
                           message: controller.messages[index],
                           onRestaurantTap: (restaurant) {
-                            print('🔵 Clicked restaurant from AI chat: ${restaurant.id} (${restaurant.name})');
+                            print(
+                              '🔵 Clicked restaurant from AI chat: ${restaurant.id} (${restaurant.name})',
+                            );
                             _navigateToRestaurant(restaurant);
                           },
                         );
@@ -112,6 +114,9 @@ class _AIChatPageState extends State<AIChatPage> {
                     controller: _messageController,
                     isLoading: controller.isLoading,
                     onSend: _sendMessage,
+                    onImageSelected: (imageFile) {
+                      _controller.sendImageMessage(imageFile);
+                    },
                   ),
                 ],
               );
