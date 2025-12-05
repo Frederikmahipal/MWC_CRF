@@ -496,6 +496,7 @@ class InsightsService {
     String restaurantId,
   ) async {
     try {
+
       // Get total visits
       final visitsSnapshot = await _firestore
           .collection('user_visits')
@@ -505,6 +506,7 @@ class InsightsService {
       int totalVisits = 0;
       for (final doc in visitsSnapshot.docs) {
         final data = doc.data();
+        // Check if this user document contains the restaurant ID
         if (data.containsKey(restaurantId)) {
           totalVisits++;
         }
@@ -519,6 +521,7 @@ class InsightsService {
       int totalLikes = 0;
       for (final doc in favoritesSnapshot.docs) {
         final data = doc.data();
+        // Check if this user document contains the restaurant ID
         if (data.containsKey(restaurantId)) {
           final value = data[restaurantId];
           // Check if it's favorited (true or timestamp string)
@@ -529,8 +532,12 @@ class InsightsService {
         }
       }
 
+      print(
+        '📊 Restaurant $restaurantId: $totalVisits visits, $totalLikes likes',
+      );
       return {'visits': totalVisits, 'likes': totalLikes};
     } catch (e) {
+      print('Error getting restaurant totals for $restaurantId: $e');
       return {'visits': 0, 'likes': 0};
     }
   }

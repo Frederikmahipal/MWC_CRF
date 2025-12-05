@@ -71,5 +71,9 @@
 	<string>Take a photo of your food to identify it</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Select a photo of your food to identify it</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>We need your location to show nearby restaurants on the map.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>We need your location to show nearby restaurants on the map.</string>
 </dict>
 </plist>

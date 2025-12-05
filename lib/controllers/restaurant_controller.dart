@@ -71,6 +71,20 @@ class RestaurantController extends ChangeNotifier {
     String restaurantId, {
     Restaurant? restaurant,
   }) async {
+    print('🎮 RestaurantController.loadRestaurantDetails: $restaurantId');
+    
+    // Reset state first to clear any previous restaurant's data
+    _updateState(
+      _state.copyWith(
+        reviews: [],
+        address: null,
+        isFavorited: false,
+        isLoadingReviews: false,
+        isLoadingAddress: false,
+        isLoadingFavorite: false,
+      ),
+    );
+    
     if (restaurant != null) {
       _updateState(
         _state.copyWith(

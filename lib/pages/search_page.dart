@@ -5,6 +5,7 @@ import '../core/app_settings.dart';
 import '../services/restaurant_service.dart';
 import '../models/restaurant.dart';
 import 'restaurants/restaurant_main_page.dart';
+import 'package:geolocator/geolocator.dart';
 
 class SearchPage extends StatefulWidget {
   const SearchPage({super.key});
@@ -16,6 +17,9 @@ class SearchPage extends StatefulWidget {
 class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
   final TextEditingController _searchController = TextEditingController();
   final RestaurantService _restaurantService = RestaurantService();
+  final MapController _mapController = MapController();
+  LatLng? _userLocation;
+  bool _isGettingLocation = false;
 
   List<Restaurant> _allRestaurants = [];
   List<Restaurant> _filteredRestaurants = [];
@@ -40,6 +44,7 @@ class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
   void dispose() {
     _searchController.dispose();
     _mapAnimationController.dispose();
+    _mapController.dispose(); // Add this
     super.dispose();
   }
 
@@ -62,6 +67,128 @@ class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
     } catch (e) {
       setState(() {
         _isLoading = false;
+      });
+    }
+  }
+
+  Future<void> _getUserLocation() async {
+    setState(() {
+      _isGettingLocation = true;
+    });
+
+    try {
+      // Check if location services are enabled
+      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
+        if (mounted) {
+          showCupertinoDialog(
+            context: context,
+            builder: (context) => CupertinoAlertDialog(
+              title: const Text('Location Services Disabled'),
+              content: const Text(
+                'Please enable location services to use this feature.',
+              ),
+              actions: [
+                CupertinoDialogAction(
+                  child: const Text('OK'),
+                  onPressed: () => Navigator.of(context).pop(),
+                ),
+              ],
+            ),
+          );
+        }
+        setState(() {
+          _isGettingLocation = false;
+        });
+        return;
+      }
+
+      // Check location permission
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.denied) {
+          if (mounted) {
+            showCupertinoDialog(
+              context: context,
+              builder: (context) => CupertinoAlertDialog(
+                title: const Text('Location Permission Denied'),
+                content: const Text(
+                  'Location permission is required to show your location on the map.',
+                ),
+                actions: [
+                  CupertinoDialogAction(
+                    child: const Text('OK'),
+                    onPressed: () => Navigator.of(context).pop(),
+                  ),
+                ],
+              ),
+            );
+          }
+          setState(() {
+            _isGettingLocation = false;
+          });
+          return;
+        }
+      }
+
+      if (permission == LocationPermission.deniedForever) {
+        if (mounted) {
+          showCupertinoDialog(
+            context: context,
+            builder: (context) => CupertinoAlertDialog(
+              title: const Text('Location Permission Permanently Denied'),
+              content: const Text(
+                'Please enable location permission in app settings.',
+              ),
+              actions: [
+                CupertinoDialogAction(
+                  child: const Text('OK'),
+                  onPressed: () => Navigator.of(context).pop(),
+                ),
+              ],
+            ),
+          );
+        }
+        setState(() {
+          _isGettingLocation = false;
+        });
+        return;
+      }
+
+      // Get current position
+      Position position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
+      );
+
+      final userLocation = LatLng(position.latitude, position.longitude);
+
+      setState(() {
+        _userLocation = userLocation;
+        _isGettingLocation = false;
+      });
+
+      // Animate map to user location
+      _mapController.move(userLocation, 15.0);
+    } catch (e) {
+      print('Error getting location: $e');
+      if (mounted) {
+        showCupertinoDialog(
+          context: context,
+          builder: (context) => CupertinoAlertDialog(
+            title: const Text('Error'),
+            content: Text('Failed to get your location: $e'),
+            actions: [
+              CupertinoDialogAction(
+                child: const Text('OK'),
+                onPressed: () => Navigator.of(context).pop(),
+              ),
+            ],
+          ),
+        );
+      }
+      setState(() {
+        _isGettingLocation = false;
       });
     }
   }
@@ -274,6 +401,7 @@ class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
       key: const ValueKey('expanded'),
       children: [
         FlutterMap(
+          mapController: _mapController,
           options: MapOptions(
             initialCenter: const LatLng(55.6761, 12.5683),
             initialZoom: 13.0,
@@ -289,21 +417,76 @@ class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
               userAgentPackageName: 'com.example.crf',
             ),
             MarkerLayer(markers: _buildFilteredMarkers()),
+            // Add user location marker if available
+            if (_userLocation != null)
+              MarkerLayer(
+                markers: [
+                  Marker(
+                    point: _userLocation!,
+                    width: 30,
+                    height: 30,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: AppSettings.accentColor,
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: CupertinoColors.white,
+                          width: 3,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: CupertinoColors.black.withOpacity(0.3),
+                            blurRadius: 4,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: const Icon(
+                        CupertinoIcons.person_fill,
+                        color: CupertinoColors.white,
+                        size: 16,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
           ],
         ),
         Positioned(
           top: 50,
           right: 16,
-          child: CupertinoButton(
-            padding: const EdgeInsets.all(12),
-            color: AppSettings.primaryColor.withOpacity(0.9),
-            borderRadius: BorderRadius.circular(20),
-            onPressed: _toggleMapExpansion,
-            child: const Icon(
-              CupertinoIcons.xmark,
-              color: CupertinoColors.white,
-              size: 18,
-            ),
+          child: Column(
+            children: [
+              // Location button
+              CupertinoButton(
+                padding: const EdgeInsets.all(12),
+                color: AppSettings.primaryColor.withOpacity(0.9),
+                borderRadius: BorderRadius.circular(20),
+                onPressed: _isGettingLocation ? null : _getUserLocation,
+                child: _isGettingLocation
+                    ? const CupertinoActivityIndicator(
+                        color: CupertinoColors.white,
+                      )
+                    : const Icon(
+                        CupertinoIcons.location_fill,
+                        color: CupertinoColors.white,
+                        size: 18,
+                      ),
+              ),
+              const SizedBox(height: 8),
+              // Close button
+              CupertinoButton(
+                padding: const EdgeInsets.all(12),
+                color: AppSettings.primaryColor.withOpacity(0.9),
+                borderRadius: BorderRadius.circular(20),
+                onPressed: _toggleMapExpansion,
+                child: const Icon(
+                  CupertinoIcons.xmark,
+                  color: CupertinoColors.white,
+                  size: 18,
+                ),
+              ),
+            ],
           ),
         ),
       ],
@@ -318,10 +501,15 @@ class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
         height: 20,
         child: GestureDetector(
           onTap: () {
+            print(
+              '🔵 Clicked restaurant: ${restaurant.id} (${restaurant.name})',
+            );
             Navigator.of(context).push(
               CupertinoPageRoute(
-                builder: (context) =>
-                    RestaurantMainPage(restaurant: restaurant),
+                builder: (context) => RestaurantMainPage(
+                  key: ValueKey(restaurant.id),
+                  restaurant: restaurant,
+                ),
               ),
             );
           },
@@ -451,9 +639,15 @@ class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
           ],
         ),
         onTap: () {
+          print(
+            '🔵 Clicked restaurant from list: ${restaurant.id} (${restaurant.name})',
+          );
           Navigator.of(context).push(
             CupertinoPageRoute(
-              builder: (context) => RestaurantMainPage(restaurant: restaurant),
+              builder: (context) => RestaurantMainPage(
+                key: ValueKey(restaurant.id),
+                restaurant: restaurant,
+              ),
             ),
           );
         },

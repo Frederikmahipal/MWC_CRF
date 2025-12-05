@@ -24,11 +24,24 @@ class _RestaurantMainPageState extends State<RestaurantMainPage> {
   @override
   void initState() {
     super.initState();
+    print('🏪 RestaurantMainPage initState: ${widget.restaurant.id} (${widget.restaurant.name})');
     _controller = RestaurantController();
     _controller.loadRestaurantDetails(
       widget.restaurant.id,
       restaurant: widget.restaurant,
     );
+  }
+
+  @override
+  void didUpdateWidget(RestaurantMainPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.restaurant.id != widget.restaurant.id) {
+      print('🔄 RestaurantMainPage restaurant changed: ${oldWidget.restaurant.id} -> ${widget.restaurant.id}');
+      _controller.loadRestaurantDetails(
+        widget.restaurant.id,
+        restaurant: widget.restaurant,
+      );
+    }
   }
 
   @override
@@ -53,6 +66,7 @@ class _RestaurantMainPageState extends State<RestaurantMainPage> {
                 slivers: [
                   SliverToBoxAdapter(
                     child: RestaurantHeaderWidget(
+                      key: ValueKey(widget.restaurant.id),
                       restaurant: widget.restaurant,
                       controller: controller,
                     ),

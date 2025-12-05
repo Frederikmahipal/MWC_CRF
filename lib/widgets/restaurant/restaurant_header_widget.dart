@@ -40,6 +40,26 @@ class _RestaurantHeaderWidgetState extends State<RestaurantHeaderWidget> {
   }
 
   @override
+  void didUpdateWidget(RestaurantHeaderWidget oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Reload data if restaurant changed
+    if (oldWidget.restaurant.id != widget.restaurant.id) {
+      print('🔄 RestaurantHeaderWidget: Restaurant changed from ${oldWidget.restaurant.id} (${oldWidget.restaurant.name}) to ${widget.restaurant.id} (${widget.restaurant.name})');
+      // Reset state first
+      setState(() {
+        _isVisited = false;
+        _totalVisits = 0;
+        _totalLikes = 0;
+        _isLoadingVisited = false;
+        _isLoadingTotals = false;
+      });
+      // Then reload data
+      _loadVisitedStatus();
+      _loadTotals();
+    }
+  }
+
+  @override
   void dispose() {
     widget.controller.removeListener(_onControllerChange);
     super.dispose();
@@ -62,23 +82,33 @@ class _RestaurantHeaderWidgetState extends State<RestaurantHeaderWidget> {
   }
 
   Future<void> _loadTotals() async {
+    // Store the restaurant ID we're loading for to prevent race conditions
+    final currentRestaurantId = widget.restaurant.id;
+    
     setState(() {
       _isLoadingTotals = true;
     });
 
     try {
+      print('🔍 Loading totals for restaurant: $currentRestaurantId (${widget.restaurant.name})');
       final totals = await InsightsService.getRestaurantTotals(
-        widget.restaurant.id,
+        currentRestaurantId,
       );
-      if (mounted) {
+      
+      // Only update state if we're still on the same restaurant
+      if (mounted && widget.restaurant.id == currentRestaurantId) {
+        print('✅ Got totals for ${widget.restaurant.name}: ${totals['visits']} visits, ${totals['likes']} likes');
         setState(() {
           _totalVisits = totals['visits'] ?? 0;
           _totalLikes = totals['likes'] ?? 0;
           _isLoadingTotals = false;
         });
+      } else {
+        print('⚠️ Restaurant changed while loading totals, ignoring result');
       }
     } catch (e) {
-      if (mounted) {
+      print('❌ Error loading totals for ${widget.restaurant.name}: $e');
+      if (mounted && widget.restaurant.id == currentRestaurantId) {
         setState(() {
           _isLoadingTotals = false;
         });

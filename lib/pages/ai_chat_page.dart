@@ -64,7 +64,10 @@ class _AIChatPageState extends State<AIChatPage> {
   void _navigateToRestaurant(Restaurant restaurant) {
     Navigator.of(context).push(
       CupertinoPageRoute(
-        builder: (context) => RestaurantMainPage(restaurant: restaurant),
+        builder: (context) => RestaurantMainPage(
+          key: ValueKey(restaurant.id),
+          restaurant: restaurant,
+        ),
       ),
     );
   }
@@ -97,14 +100,9 @@ class _AIChatPageState extends State<AIChatPage> {
                         }
                         return ChatMessageWidget(
                           message: controller.messages[index],
-                          onRestaurantTap: () {
-                            final message = controller.messages[index];
-                            if (message.recommendedRestaurants != null &&
-                                message.recommendedRestaurants!.isNotEmpty) {
-                              _navigateToRestaurant(
-                                message.recommendedRestaurants!.first,
-                              );
-                            }
+                          onRestaurantTap: (restaurant) {
+                            print('🔵 Clicked restaurant from AI chat: ${restaurant.id} (${restaurant.name})');
+                            _navigateToRestaurant(restaurant);
                           },
                         );
                       },

@@ -4,7 +4,7 @@ import '../../models/restaurant.dart';
 
 class RestaurantRecommendationCard extends StatelessWidget {
   final Restaurant restaurant;
-  final VoidCallback? onTap;
+  final ValueChanged<Restaurant>? onTap;
 
   const RestaurantRecommendationCard({
     super.key,
@@ -18,7 +18,7 @@ class RestaurantRecommendationCard extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 8),
       child: CupertinoButton(
         padding: EdgeInsets.zero,
-        onPressed: onTap,
+        onPressed: () => onTap?.call(restaurant),
         child: Container(
           width: double.infinity,
           padding: const EdgeInsets.all(12),

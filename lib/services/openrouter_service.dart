@@ -6,10 +6,10 @@ import '../models/restaurant.dart';
 class OpenRouterService {
   static String get apiKey => dotenv.env['OPENROUTER_API_KEY'] ?? '';
   static String get apiUrl =>
-      dotenv.env['OPENROUTER_API_URL'] ??
       'https://openrouter.ai/api/v1/chat/completions';
 
   Future<String> getRecommendations(String prompt) async {
+
     try {
       final response = await http.post(
         Uri.parse(apiUrl),
@@ -18,7 +18,7 @@ class OpenRouterService {
           'Content-Type': 'application/json',
         },
         body: jsonEncode({
-          'model': 'deepseek/deepseek-r1-distill-llama-70b:free',
+          'model': 'tngtech/deepseek-r1t2-chimera:free',
           'messages': [
             {
               'role': 'system',
@@ -32,31 +32,62 @@ class OpenRouterService {
         }),
       );
 
+      print('📡 OpenRouter API Response Status: ${response.statusCode}');
+
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
 
-      
+        // Check if response has the expected structure
+        if (data['choices'] == null || data['choices'].isEmpty) {
+          print('❌ ERROR: Invalid response structure - no choices found');
+          print('Response body: ${response.body}');
+          return 'Sorry, I received an unexpected response from the AI service. Please try again.';
+        }
+
         final aiResponse =
             data['choices'][0]['message']['content'] ?? 'No response generated';
 
-        final isTruncated =
-            aiResponse.endsWith('"') ||
-            aiResponse.endsWith('...') ||
-            aiResponse.length < 100;
-
-        if (isTruncated) {
-          print('⚠️ WARNING: Response appears to be truncated!');
-          print(
-            '⚠️ Response ends with: "${aiResponse.substring(aiResponse.length - 20)}"',
-          );
+        if (aiResponse == 'No response generated') {
+          print('❌ ERROR: No content in AI response');
+          print('Response body: ${response.body}');
+          return 'Sorry, the AI service did not generate a response. Please try again.';
         }
-
         return aiResponse;
       } else {
-        return 'Sorry, I couldn\'t process your request. Please try again.';
+        // Log the actual error response
+        print('ERROR: API returned status ${response.statusCode}');
+        print('Response body: ${response.body}');
+
+        try {
+          final errorData = jsonDecode(response.body);
+          final errorMessage =
+              errorData['error']?['message'] ??
+              errorData['error']?['type'] ??
+              'Unknown error';
+          final errorCode = errorData['error']?['code'] ?? '';
+          print('Error message: $errorMessage');
+          print('Error code: $errorCode');
+
+          // Check for model availability errors
+          if (errorCode == 'model_not_available' ||
+              errorMessage.toLowerCase().contains('model') &&
+                  errorMessage.toLowerCase().contains('not available')) {
+            return 'Sorry, the AI model is currently unavailable. Please try again later or contact support.';
+          }
+
+          if (response.statusCode == 401) {
+            return 'Sorry, the API key is invalid. Please check your configuration.';
+          } else if (response.statusCode == 429) {
+            return 'Sorry, too many requests. Please wait a moment and try again.';
+          } else if (response.statusCode >= 500) {
+            return 'Sorry, the AI service is temporarily unavailable. Please try again later.';
+          }
+        } catch (_) {
+        }
+
+        return 'Sorry, I couldn\'t process your request (Error ${response.statusCode}). Please try again.';
       }
     } catch (e) {
-      print('OpenRouter error: $e');
       return 'Sorry, I couldn\'t connect to the AI service. Please check your internet connection.';
     }
   }
