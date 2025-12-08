@@ -3,12 +3,12 @@ import '../models/restaurant.dart';
 import '../services/ml_food_classifier_service.dart';
 import '../services/restaurant_service.dart';
 
-/// Service for ML-based food search
-/// Takes a photo, classifies the food, and finds restaurants serving that cuisine
+// Service for ML-based food search
+// Takes a photo, classifies the food, and finds restaurants serving that cuisine
 class MLFoodSearchService {
   final RestaurantService _restaurantService = RestaurantService();
 
-  /// Classify food from image and find matching restaurants
+  // Classify food from image and find matching restaurants
   Future<MLFoodSearchResult> searchByFoodImage(File imageFile) async {
     try {
       // Classify the food
@@ -49,8 +49,8 @@ class MLFoodSearchService {
     }
   }
 
-  /// Map detected food label to cuisine type for restaurant search
-  /// Only uses actual labels from food_labels.txt
+  // Map detected food label to cuisine type for restaurant search
+  // Only uses actual labels from food_labels.txt
   String _mapFoodToCuisine(String foodLabel) {
     final labelLower = foodLabel.toLowerCase();
 
@@ -211,7 +211,7 @@ class MLFoodSearchService {
   }
 }
 
-/// Result of ML food search
+// Result of ML food search
 class MLFoodSearchResult {
   final bool success;
   final String? error;

@@ -1,13 +1,12 @@
 import 'package:flutter/cupertino.dart';
 
 class AppSettings {
-  // Modern, clean color palette optimized for dark theme
-  static const Color primaryColor = Color(0xFF10B981); // Vibrant emerald green
-  static const Color secondaryColor = Color(0xFF64748B); // Modern slate grey
-  static const Color accentColor = Color(0xFF3B82F6); // Vibrant blue
-  static const Color successColor = Color(0xFF10B981); // Emerald green
-  static const Color warningColor = Color(0xFFF59E0B); // Warm amber
-  static const Color errorColor = Color(0xFFEF4444); // Modern red
+  static const Color primaryColor = Color(0xFF10B981); 
+  static const Color secondaryColor = Color(0xFF64748B); 
+  static const Color accentColor = Color(0xFF3B82F6); 
+  static const Color successColor = Color(0xFF10B981);
+  static const Color warningColor = Color(0xFFF59E0B); 
+  static const Color errorColor = Color(0xFFEF4444); 
 
   static Color getBackgroundColor(BuildContext context) {
     return CupertinoTheme.brightnessOf(context) == Brightness.dark
@@ -47,14 +46,14 @@ class AppSettings {
 
   static Color getPrimaryColor(BuildContext context) {
     return CupertinoTheme.brightnessOf(context) == Brightness.dark
-        ? const Color(0xFF34D399) // Lighter emerald for dark mode
+        ? const Color(0xFF34D399) 
         : primaryColor;
   }
 
   static Color getShadowColor(BuildContext context) {
     return CupertinoTheme.brightnessOf(context) == Brightness.dark
         ? const Color(0x60000000)
-        : const Color(0x1A10B981); // Updated to match new primary color
+        : const Color(0x1A10B981); 
   }
 
   static const String appName = 'Copenhagen Restaurant Finder';

@@ -1,4 +1,5 @@
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart' show HSVColor;
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:latlong2/latlong.dart' as latlong;
 import '../core/app_settings.dart';
@@ -53,7 +54,6 @@ class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
       final restaurants = await _restaurantService.getAllRestaurants();
 
       if (restaurants.isNotEmpty) {
-        print('🍽️ Sample restaurant cuisines:');
         for (int i = 0; i < 5 && i < restaurants.length; i++) {
           print('  ${restaurants[i].name}: ${restaurants[i].cuisines}');
         }
@@ -239,7 +239,6 @@ class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
       } else {
         _selectedCuisines.add(cuisine);
       }
-      print('🔍 Selected cuisines: $_selectedCuisines');
       _filterRestaurants();
     });
   }
@@ -360,10 +359,7 @@ class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
           children: [
             GoogleMap(
               initialCameraPosition: const CameraPosition(
-                target: LatLng(
-                  55.6761,
-                  12.5683,
-                ), // Copenhagen - Google Maps LatLng
+                target: LatLng(55.6761, 12.5683), // Copenhagen coordinates
                 zoom: 13.0,
               ),
               markers: _buildGoogleMapMarkers(),
@@ -405,7 +401,7 @@ class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
       children: [
         GoogleMap(
           initialCameraPosition: const CameraPosition(
-            target: LatLng(55.6761, 12.5683), // Copenhagen - Google Maps LatLng
+            target: LatLng(55.6761, 12.5683), // Copenhagen coordinates
             zoom: 13.0,
           ),
           markers: _buildGoogleMapMarkers(),
@@ -463,8 +459,6 @@ class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
     final primaryColor = AppSettings.getPrimaryColor(context);
     final accentColor = AppSettings.accentColor;
 
-    // Convert Color to HSV hue for Google Maps markers
-    // Google Maps uses hue values 0-360, where 0=red, 120=green, 240=blue
     final primaryHue = _colorToHue(primaryColor);
     final accentHue = _colorToHue(accentColor);
 
@@ -483,9 +477,6 @@ class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
             snippet: restaurant.cuisines.join(', '),
           ),
           onTap: () {
-            print(
-              '🔵 Clicked restaurant: ${restaurant.id} (${restaurant.name})',
-            );
             Navigator.of(context).push(
               CupertinoPageRoute(
                 builder: (context) => RestaurantMainPage(
@@ -514,31 +505,9 @@ class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
     return markers;
   }
 
-  /// Convert Flutter Color to Google Maps hue value (0-360)
+  // Convert Flutter Color to Google Maps hue value (0-360)
   double _colorToHue(Color color) {
-    // Convert RGB to HSV
-    final r = color.red / 255.0;
-    final g = color.green / 255.0;
-    final b = color.blue / 255.0;
-
-    final max = r > g ? (r > b ? r : b) : (g > b ? g : b);
-    final min = r < g ? (r < b ? r : b) : (g < b ? g : b);
-    final delta = max - min;
-
-    double hue = 0.0;
-    if (delta != 0) {
-      if (max == r) {
-        hue = 60 * (((g - b) / delta) % 6);
-      } else if (max == g) {
-        hue = 60 * (((b - r) / delta) + 2);
-      } else {
-        hue = 60 * (((r - g) / delta) + 4);
-      }
-    }
-
-    // Ensure hue is in range 0-360
-    if (hue < 0) hue += 360;
-    return hue;
+    return HSVColor.fromColor(color).hue;
   }
 
   Widget _buildResultsList() {
@@ -643,9 +612,7 @@ class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
           ],
         ),
         onTap: () {
-          print(
-            '🔵 Clicked restaurant from list: ${restaurant.id} (${restaurant.name})',
-          );
+
           Navigator.of(context).push(
             CupertinoPageRoute(
               builder: (context) => RestaurantMainPage(

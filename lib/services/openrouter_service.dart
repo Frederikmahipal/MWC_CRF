@@ -21,7 +21,7 @@ class OpenRouterService {
               'Content-Type': 'application/json',
             },
             body: jsonEncode({
-              'model': 'tngtech/deepseek-r1t2-chimera:free',
+              'model': 'google/gemini-2.0-flash-exp:free',
               'messages': [
                 {
                   'role': 'system',

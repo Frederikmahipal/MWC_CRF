@@ -3,7 +3,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import '../models/restaurant.dart';
 
-/// Google Places API service with safe testing limits
+// Google Places API service with safe testing limits
 class PlacesApiService {
   static String get apiKey => dotenv.env['GOOGLE_PLACES_API_KEY'] ?? '';
   static const String _baseUrl =
@@ -21,21 +21,21 @@ class PlacesApiService {
   static const double _north = 55.71;
   static const double _east = 12.65;
 
-  /// Check if we've reached the test limit
+  // Check if we've reached the test limit
   static bool get hasReachedLimit => _limitReached;
 
-  /// Get current query count
+  // Get current query count
   static int get queryCount => _queryCount;
 
-  /// Reset query counter (for testing)
+  // Reset query counter (for testing)
   static void resetQueryCount() {
     _queryCount = 0;
     _limitReached = false;
   }
 
-  /// Fetch restaurants from Google Places API
-  /// Uses multiple search queries to get more results since pagination doesn't work
-  /// Returns empty list if limit reached or error occurs
+  // Fetch restaurants from Google Places API
+  // Uses multiple search queries to get more results since pagination doesn't work
+  // Returns empty list if limit reached or error occurs
   Future<List<Restaurant>> fetchCopenhagenRestaurants() async {
     if (_limitReached || apiKey.isEmpty) return [];
 
@@ -102,7 +102,7 @@ class PlacesApiService {
     }
   }
 
-  /// Search restaurants using Places API Text Search with a specific query
+  // Search restaurants using Places API Text Search with a specific query
   Future<Map<String, dynamic>> _searchRestaurantsWithQuery(String query) async {
     final requestBody = {
       'textQuery': query,
@@ -131,13 +131,12 @@ class PlacesApiService {
     if (response.statusCode == 200) {
       return json.decode(response.body);
     } else {
-      print('❌ Places API error: ${response.statusCode}');
       print('Response: ${response.body}');
       throw Exception('Places API request failed: ${response.statusCode}');
     }
   }
 
-  /// Parse a place from Places API response to Restaurant model
+  // Parse a place from Places API response to Restaurant model
   Restaurant? _parsePlace(Map<String, dynamic> place, int currentCount) {
     try {
       final id = place['id'] as String?;
@@ -218,12 +217,12 @@ class PlacesApiService {
         'addr:street': address,
         'averageRating': rating,
         'totalReviews': userRatingCount,
-        'indoor_seating': true, // Assume true for restaurants
+        'indoor_seating': true, 
         'outdoor_seating': hasOutdoorSeating,
         'wheelchair': wheelchairAccessible,
         'takeaway': hasTakeaway,
         'delivery': hasDelivery,
-        'wifi': false, // Not available in Places API
+        'wifi': false, 
         'drive_through': hasDriveThrough,
       };
 
@@ -233,12 +232,10 @@ class PlacesApiService {
     }
   }
 
-  /// Extract cuisine types from Places API types and restaurant name
+  // Extract cuisine types from Places API types and restaurant name
   List<String> _extractCuisines(List<dynamic> types, String? restaurantName) {
     final cuisines = <String>{};
     final nameLower = (restaurantName ?? '').toLowerCase();
-
-    // Places API (New) types are strings like "restaurant", "italian_restaurant", etc.
     for (final type in types) {
       final typeStr = type.toString().toLowerCase();
 
@@ -331,8 +328,6 @@ class PlacesApiService {
     } else if (nameLower.contains('cafe') || nameLower.contains('coffee')) {
       cuisines.add('cafe');
     }
-
-    // If no specific cuisine found, add generic restaurant
     if (cuisines.isEmpty) {
       cuisines.add('restaurant');
     }
@@ -340,7 +335,7 @@ class PlacesApiService {
     return cuisines.toList();
   }
 
-  /// Parse opening hours from Places API format
+  // Parse opening hours from Places API format
   String? _parseOpeningHours(dynamic openingHours) {
     if (openingHours == null) return null;
 
@@ -351,7 +346,7 @@ class PlacesApiService {
         return weekdayDescriptions.join('; ');
       }
     } catch (e) {
-      // Ignore parsing errors
+      return null;
     }
 
     return null;

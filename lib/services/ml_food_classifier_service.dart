@@ -3,7 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:tflite_flutter/tflite_flutter.dart';
 import 'package:image/image.dart' as img;
 
-/// Service for classifying food images using TensorFlow Lite
+// Service for classifying food images using TensorFlow Lite
 class MLFoodClassifierService {
   static Interpreter? _interpreter;
   static List<String> _labels = [];
@@ -12,7 +12,7 @@ class MLFoodClassifierService {
   static const String _labelsPath = 'assets/models/food_labels.txt';
   static int? _inputSize;
 
-  /// Initialize the ML model
+  // Initialize the ML model
   static Future<bool> initialize() async {
     if (_isInitialized) return true;
 
@@ -43,7 +43,7 @@ class MLFoodClassifierService {
     }
   }
 
-  /// Preprocess image for model input
+  // Preprocess image for model input
   static dynamic _preprocessImage(img.Image image) {
     // Resize image to model input size
     final resized = img.copyResize(
@@ -70,7 +70,7 @@ class MLFoodClassifierService {
     return input;
   }
 
-  /// Classify food from image file
+  // Classify food from image file
   static Future<String?> classifyFood(File imageFile) async {
     if (!_isInitialized) {
       final initialized = await initialize();
@@ -133,7 +133,7 @@ class MLFoodClassifierService {
     }
   }
 
-  /// Dispose resources
+  // Dispose resources
   static void dispose() {
     _interpreter?.close();
     _interpreter = null;

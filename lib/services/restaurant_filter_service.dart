@@ -1,13 +1,13 @@
 import '../models/restaurant.dart';
 import 'restaurant_service.dart';
 
-/// Service for smart filtering of restaurants before sending to AI
-/// This reduces the number of restaurants sent to AI, making it faster and cheaper
+// Service for smart filtering of restaurants before sending to AI
+// This reduces the number of restaurants sent to AI, making it faster and cheaper
 class RestaurantFilterService {
   final RestaurantService _restaurantService = RestaurantService();
 
-  /// Extract filters from user query and return pre-filtered restaurants
-  /// Returns top 20-50 most relevant restaurants
+  // Extract filters from user query and return pre-filtered restaurants
+  // Returns top 20-50 most relevant restaurants
   Future<List<Restaurant>> getFilteredRestaurantsForAI(String userQuery) async {
     final queryLower = userQuery.toLowerCase();
 
@@ -94,7 +94,7 @@ class RestaurantFilterService {
     return restaurants;
   }
 
-  /// Extract cuisine type from query
+  // Extract cuisine type from query
   String? _extractCuisine(String query) {
     final cuisineMap = {
       'italian': ['italian', 'pizza', 'pasta', 'spaghetti', 'lasagna'],
@@ -126,7 +126,7 @@ class RestaurantFilterService {
     return null;
   }
 
-  /// Extract location/neighborhood from query
+  // Extract location/neighborhood from query
   String? _extractLocation(String query) {
     // Common Copenhagen neighborhoods
     final locations = [
@@ -156,7 +156,7 @@ class RestaurantFilterService {
     return null;
   }
 
-  /// Extract feature requirement from query
+  // Extract feature requirement from query
   bool? _extractFeature(String query, List<String> keywords) {
     // Check for positive mentions
     for (final keyword in keywords) {

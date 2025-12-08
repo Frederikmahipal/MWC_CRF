@@ -11,14 +11,27 @@ import GoogleMaps
   ) -> Bool {
     FirebaseApp.configure()
     
-    // Initialize Google Maps with API key from Info.plist
+    // Initialize Google Maps with API key
+    // Try to get API key from Info.plist first
+    var apiKey: String?
     if let path = Bundle.main.path(forResource: "Info", ofType: "plist"),
        let plist = NSDictionary(contentsOfFile: path),
-       let apiKey = plist["GOOGLE_MAPS_API_KEY"] as? String {
-      GMSServices.provideAPIKey(apiKey)
-    } else {
-      print("⚠️ Warning: GOOGLE_MAPS_API_KEY not found in Info.plist")
+       let key = plist["GOOGLE_MAPS_API_KEY"] as? String,
+       !key.isEmpty && key != "YOUR_GOOGLE_MAPS_API_KEY_HERE" {
+      apiKey = key
     }
+    
+    // Fallback: Try to read from environment variable (if available)
+    if apiKey == nil {
+      apiKey = ProcessInfo.processInfo.environment["GOOGLE_MAPS_API_KEY"]
+    }
+    
+    if let key = apiKey {
+      GMSServices.provideAPIKey(key)
+      print("✅ Google Maps API key initialized")
+    } else {
+      print("❌ ERROR: Google Maps API key not found! Please set GOOGLE_MAPS_API_KEY in Info.plist")
+    } 
     
     GeneratedPluginRegistrant.register(with: self)
     return super.application(application, didFinishLaunchingWithOptions: launchOptions)

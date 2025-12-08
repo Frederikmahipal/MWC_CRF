@@ -1,6 +1,6 @@
 import 'dart:io';
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/material.dart' show Colors;
+import 'package:flutter/material.dart' show Colors, HSVColor;
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../models/restaurant.dart';
@@ -53,7 +53,6 @@ class RestaurantMapWidget extends StatelessWidget {
               tiltGesturesEnabled: false,
               rotateGesturesEnabled: false,
             ),
-            // Invisible layer that covers map
             Positioned.fill(
               child: GestureDetector(
                 onTap: () => _openInMapsApp(context),
@@ -142,30 +141,9 @@ class RestaurantMapWidget extends StatelessWidget {
     }
   }
 
-  /// Convert Flutter Color to Google Maps hue value (0-360)
+  // Convert Flutter Color to Google Maps hue value (0-360)
   double _colorToHue(Color color) {
-    // Convert RGB to HSV
-    final r = color.red / 255.0;
-    final g = color.green / 255.0;
-    final b = color.blue / 255.0;
-
-    final max = r > g ? (r > b ? r : b) : (g > b ? g : b);
-    final min = r < g ? (r < b ? r : b) : (g < b ? g : b);
-    final delta = max - min;
-
-    double hue = 0.0;
-    if (delta != 0) {
-      if (max == r) {
-        hue = 60 * (((g - b) / delta) % 6);
-      } else if (max == g) {
-        hue = 60 * (((b - r) / delta) + 2);
-      } else {
-        hue = 60 * (((r - g) / delta) + 4);
-      }
-    }
-
-    // Ensure hue is in range 0-360
-    if (hue < 0) hue += 360;
-    return hue;
+    // Flutter's HSVColor.fromColor() handles the conversion automatically
+    return HSVColor.fromColor(color).hue;
   }
 }

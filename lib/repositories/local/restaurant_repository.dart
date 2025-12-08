@@ -4,13 +4,13 @@ import 'package:latlong2/latlong.dart';
 import '../../models/restaurant.dart' as model;
 import 'database.dart';
 
-/// Repository for managing restaurants in local SQLite database
+// Repository for managing restaurants in local SQLite database
 class RestaurantRepository {
   final AppDatabase _database;
 
   RestaurantRepository(this._database);
 
-  /// Get all restaurants from local database
+  // Get all restaurants from local database
   Future<List<model.Restaurant>> getAllRestaurants() async {
     try {
       final dbRestaurants = await (_database.select(
@@ -24,7 +24,7 @@ class RestaurantRepository {
     }
   }
 
-  /// Check if database has restaurants
+  // Check if database has restaurants
   Future<bool> hasRestaurants() async {
     try {
       final count = await (_database.selectOnly(
@@ -36,19 +36,7 @@ class RestaurantRepository {
     }
   }
 
-  /// Get count of restaurants in database
-  Future<int> getRestaurantCount() async {
-    try {
-      final count = await (_database.selectOnly(
-        _database.restaurants,
-      )..addColumns([_database.restaurants.id.count()])).getSingle();
-      return count.read(_database.restaurants.id.count()) ?? 0;
-    } catch (e) {
-      return 0;
-    }
-  }
-
-  /// Get the last update time of restaurants
+  // Get the last update time of restaurants
   Future<DateTime?> getLastUpdateTime() async {
     try {
       final result = await (_database.selectOnly(
@@ -60,7 +48,7 @@ class RestaurantRepository {
     }
   }
 
-  /// Save restaurants to database (replace all existing)
+  // Save restaurants to database (replace all existing)
   Future<void> saveRestaurants(List<model.Restaurant> restaurants) async {
     try {
       // Delete all existing restaurants
@@ -98,12 +86,11 @@ class RestaurantRepository {
         batch.insertAll(_database.restaurants, companions);
       });
     } catch (e) {
-      print('❌ Error saving restaurants to database: $e');
       rethrow;
     }
   }
 
-  /// Search restaurants by query (name, cuisine, neighborhood)
+  // Search restaurants by query (name, cuisine, neighborhood)
   Future<List<model.Restaurant>> searchRestaurants(String query) async {
     if (query.isEmpty) return await getAllRestaurants();
 
@@ -121,12 +108,11 @@ class RestaurantRepository {
 
       return dbRestaurants.map(_dbToModel).toList();
     } catch (e) {
-      print('Error searching restaurants: $e');
       return [];
     }
   }
 
-  /// Get restaurants by cuisine
+  // Get restaurants by cuisine
   Future<List<model.Restaurant>> getRestaurantsByCuisine(String cuisine) async {
     try {
       final lowercaseCuisine = cuisine.toLowerCase();
@@ -141,7 +127,7 @@ class RestaurantRepository {
     }
   }
 
-  /// Get restaurants with specific features
+  // Get restaurants with specific features
   Future<List<model.Restaurant>> getRestaurantsWithFeatures({
     bool? hasOutdoorSeating,
     bool? isWheelchairAccessible,
@@ -180,7 +166,7 @@ class RestaurantRepository {
     }
   }
 
-  /// Get restaurants near a location
+  // Get restaurants near a location
   Future<List<model.Restaurant>> getRestaurantsNearLocation(
     double latitude,
     double longitude,
@@ -203,7 +189,7 @@ class RestaurantRepository {
     }
   }
 
-  /// Get available cuisines
+  // Get available cuisines
   Future<List<String>> getAvailableCuisines() async {
     try {
       final restaurants = await getAllRestaurants();
@@ -217,16 +203,6 @@ class RestaurantRepository {
     } catch (e) {
       print('Error getting available cuisines: $e');
       return [];
-    }
-  }
-
-  /// Clear all restaurants from database
-  Future<void> clearAll() async {
-    try {
-      await _database.delete(_database.restaurants).go();
-      print('✅ Cleared all restaurants from database');
-    } catch (e) {
-      print('Error clearing restaurants: $e');
     }
   }
 
@@ -262,7 +238,7 @@ class RestaurantRepository {
     );
   }
 
-  /// Calculate distance between two coordinates (Haversine formula)
+  // Calculate distance between two coordinates (Haversine formula)
   double _calculateDistance(
     double lat1,
     double lon1,

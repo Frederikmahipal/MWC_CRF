@@ -25,8 +25,7 @@ class ChatController extends ChangeNotifier {
 
   Future<void> _initializeChat() async {
     _addWelcomeMessage();
-    // Don't load all restaurants upfront - we'll filter on-demand
-    _updateState(_state.copyWith(isLoadingRestaurants: false));
+ //   _updateState(_state.copyWith(isLoadingRestaurants: false));
   }
 
   void _addWelcomeMessage() {
@@ -108,27 +107,12 @@ class ChatController extends ChangeNotifier {
         ),
       );
     } catch (e) {
-      print('AI Error: $e'); // Simple debug
-      String errorText =
-          "Sorry, I couldn't process your request. Please try again.";
-      if (e.toString().contains('API key not configured')) {
-        errorText = "API key not configured. Please check your settings.";
-      } else if (e.toString().contains('timed out') ||
-          e.toString().contains('TimeoutException')) {
-        errorText = "Request timed out. Please try again.";
-      } else if (e.toString().contains('401') || e.toString().contains('403')) {
-        errorText = "API authentication failed. Please check your API key.";
-      } else if (e.toString().contains('404') ||
-          e.toString().contains('model')) {
-        errorText = "Model not available. Please try again later.";
-      }
-
+      print('AI Error: $e');
       final errorMessage = ChatMessage(
-        text: errorText,
         isUser: false,
         timestamp: DateTime.now(),
+        text: "Sorry, I couldn't process your request. Please try again.",
       );
-
       _updateState(
         _state.copyWith(
           messages: [..._state.messages, errorMessage],
@@ -139,17 +123,14 @@ class ChatController extends ChangeNotifier {
     }
   }
 
-  /// Extract restaurant recommendations from AI response
+  // Extract restaurant recommendations from AI response
   List<Restaurant> _extractRestaurantRecommendations(
     String aiResponse,
     List<Restaurant> availableRestaurants,
   ) {
     final List<Restaurant> recommendations = [];
     final aiResponseLower = aiResponse.toLowerCase();
-
-    // Use restaurants as-is (no sorting needed)
     final sortedRestaurants = availableRestaurants;
-
     // Create a map for faster lookup
     final restaurantMap = {
       for (var r in sortedRestaurants) r.name.toLowerCase(): r,

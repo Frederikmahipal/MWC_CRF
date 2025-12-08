@@ -29,7 +29,6 @@ class AuthService {
         final userData = await FirestoreService.getUser(userId);
         if (userData != null) {
           _currentUser = userData;
-          print('🔍 User loaded from storage: ${userData.fullName}');
         }
       }
     } catch (e) {
@@ -43,34 +42,25 @@ class AuthService {
       try {
         final prefs = await SharedPreferences.getInstance();
         final lastAuthTime = prefs.getInt(_keyLastAuthTime);
-        print('🔍 Session check - Last auth time: $lastAuthTime');
+        print('Session check - Last auth time: $lastAuthTime');
 
         if (lastAuthTime != null) {
           final sessionDuration =
               DateTime.now().millisecondsSinceEpoch - lastAuthTime;
           const sessionTimeout = 0;
-          print(
-            '🔍 Session duration: ${sessionDuration}ms, timeout: ${sessionTimeout}ms',
-          );
 
           if (sessionDuration > sessionTimeout) {
-            print('🔍 Session expired, requiring re-authentication');
             await _expireSession();
           } else {
-            print('🔍 Session valid, staying logged in');
             _isAuthenticated = true;
           }
         } else {
-          print('🔍 No last auth time found, logging out');
           await logout();
         }
       } catch (e) {
-        print('Error checking session validity: $e');
         await logout();
       }
-    } else {
-      print('🔍 No user found, not authenticated');
-    }
+    } 
   }
 
   static Future<bool> loginWithPin(String pin) async {
