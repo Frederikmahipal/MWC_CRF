@@ -1,7 +1,5 @@
 import 'package:flutter/cupertino.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:crf/navigation/main_navigation.dart';
 import 'package:crf/pages/onboarding/name_input_page.dart';
 import 'package:crf/pages/onboarding/pin_setup_page.dart';
 import 'package:crf/pages/onboarding/pin_login_page.dart';

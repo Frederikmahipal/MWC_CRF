@@ -31,6 +31,17 @@ android {
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+
+        // Read Google Maps API key from .env file (project root)
+        val envFile = rootProject.file("../.env")
+        val googleMapsApiKey = if (envFile.exists()) {
+            envFile.readLines()
+                .find { it.startsWith("GOOGLE_MAPS_API_KEY=") }
+                ?.substringAfter("=")?.trim() ?: ""
+        } else {
+            ""
+        }
+        manifestPlaceholders["GOOGLE_MAPS_API_KEY"] = googleMapsApiKey
     }
 
     buildTypes {

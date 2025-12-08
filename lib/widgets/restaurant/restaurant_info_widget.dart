@@ -1,16 +1,12 @@
 import 'package:flutter/cupertino.dart';
 import '../../core/app_settings.dart';
-import '../../controllers/restaurant_controller.dart';
+import '../../models/restaurant.dart';
 
 class RestaurantInfoWidget extends StatelessWidget {
   final String? openingHours;
-  final RestaurantController controller;
+  final Restaurant? restaurant;
 
-  const RestaurantInfoWidget({
-    super.key,
-    this.openingHours,
-    required this.controller,
-  });
+  const RestaurantInfoWidget({super.key, this.openingHours, this.restaurant});
 
   @override
   Widget build(BuildContext context) {
@@ -42,14 +38,13 @@ class RestaurantInfoWidget extends StatelessWidget {
             ),
             const SizedBox(height: 8),
           ],
-          _buildInfoRow(
-            context,
-            CupertinoIcons.location,
-            'Address',
-            controller.isLoadingAddress
-                ? 'Loading address...'
-                : controller.address ?? 'Address not available',
-          ),
+          if (restaurant != null)
+            _buildInfoRow(
+              context,
+              CupertinoIcons.location,
+              'Address',
+              restaurant!.address ?? 'Address not available',
+            ),
         ],
       ),
     );

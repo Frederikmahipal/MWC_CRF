@@ -155,10 +155,6 @@ class _AvatarSelectionPageState extends State<AvatarSelectionPage> {
   void _complete() async {
     try {
       final userId = 'user_${DateTime.now().millisecondsSinceEpoch}';
-      print('🔍 Creating user with ID: $userId');
-      print('📱 Phone number: ${widget.phoneNumber}');
-      print('👤 Name: ${widget.firstName} ${widget.lastName}');
-
       await FirestoreService.createOrUpdateUser(
         userId: userId,
         firstName: widget.firstName,

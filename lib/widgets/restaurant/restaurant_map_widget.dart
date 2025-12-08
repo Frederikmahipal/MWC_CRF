@@ -1,6 +1,7 @@
+import 'dart:io';
 import 'package:flutter/cupertino.dart';
-import 'package:flutter_map/flutter_map.dart';
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' show Colors, HSVColor;
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../models/restaurant.dart';
 import '../../core/app_settings.dart';
@@ -12,7 +13,8 @@ class RestaurantMapWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = CupertinoTheme.brightnessOf(context) == Brightness.dark;
+    final primaryColor = AppSettings.getPrimaryColor(context);
+    final primaryHue = _colorToHue(primaryColor);
 
     return Container(
       margin: const EdgeInsets.all(AppSettings.defaultPadding),
@@ -24,58 +26,33 @@ class RestaurantMapWidget extends StatelessWidget {
         borderRadius: BorderRadius.circular(AppSettings.defaultBorderRadius),
         child: Stack(
           children: [
-            FlutterMap(
-              options: MapOptions(
-                initialCenter: restaurant.location,
-                initialZoom: 16.0,
-                minZoom: 10.0,
-                maxZoom: 18.0,
-                interactionOptions: const InteractionOptions(
-                  flags: InteractiveFlag.none,
+            GoogleMap(
+              initialCameraPosition: CameraPosition(
+                target: LatLng(
+                  restaurant.location.latitude,
+                  restaurant.location.longitude,
                 ),
+                zoom: 16.0,
               ),
-              children: [
-                TileLayer(
-                  urlTemplate: isDark
-                      ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
-                      : 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                  subdomains: const ['a', 'b', 'c'],
-                  userAgentPackageName: 'com.example.crf',
+              markers: {
+                Marker(
+                  markerId: MarkerId(restaurant.id),
+                  position: LatLng(
+                    restaurant.location.latitude,
+                    restaurant.location.longitude,
+                  ),
+                  icon: BitmapDescriptor.defaultMarkerWithHue(primaryHue),
+                  infoWindow: InfoWindow(title: restaurant.name),
                 ),
-                MarkerLayer(
-                  markers: [
-                    Marker(
-                      point: restaurant.location,
-                      width: 40,
-                      height: 40,
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: CupertinoColors.systemRed,
-                          shape: BoxShape.circle,
-                          border: Border.all(
-                            color: CupertinoColors.white,
-                            width: 3,
-                          ),
-                          boxShadow: [
-                            BoxShadow(
-                              color: CupertinoColors.black.withOpacity(0.3),
-                              blurRadius: 4,
-                              offset: const Offset(0, 2),
-                            ),
-                          ],
-                        ),
-                        child: const Icon(
-                          CupertinoIcons.location_solid,
-                          color: CupertinoColors.white,
-                          size: 20,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
+              },
+              mapType: MapType.normal,
+              zoomControlsEnabled: false,
+              myLocationButtonEnabled: false,
+              scrollGesturesEnabled: false,
+              zoomGesturesEnabled: false,
+              tiltGesturesEnabled: false,
+              rotateGesturesEnabled: false,
             ),
-            // Invisible layer that covers map
             Positioned.fill(
               child: GestureDetector(
                 onTap: () => _openInMapsApp(context),
@@ -91,40 +68,82 @@ class RestaurantMapWidget extends StatelessWidget {
   void _openInMapsApp(BuildContext context) async {
     try {
       final lat = restaurant.location.latitude;
-      final long = restaurant.location.longitude;
+      final lng = restaurant.location.longitude;
       final restaurantName = restaurant.name;
+      final address = restaurant.address;
 
-      final appleMapsUrl =
-          'https://maps.apple.com/?q=$restaurantName&ll=$lat,$long';
-      final appleMapsUri = Uri.parse(appleMapsUrl);
+      Uri mapsUri;
 
-      if (await canLaunchUrl(appleMapsUri)) {
-        await launchUrl(appleMapsUri, mode: LaunchMode.externalApplication);
-      } else {
-        final googleMapsUrl =
-            'https://maps.google.com/?q=$restaurantName&ll=$lat,$long';
-        final googleMapsUri = Uri.parse(googleMapsUrl);
-
-        if (await canLaunchUrl(googleMapsUri)) {
-          await launchUrl(googleMapsUri, mode: LaunchMode.externalApplication);
-        } else {
-          showCupertinoDialog(
-            context: context,
-            builder: (context) => CupertinoAlertDialog(
-              title: const Text('Error'),
-              content: Text('Could not open maps app'),
-              actions: [
-                CupertinoDialogAction(
-                  child: const Text('OK'),
-                  onPressed: () => Navigator.pop(context),
-                ),
-              ],
-            ),
+      if (Platform.isIOS) {
+        // Use Apple Maps on iOS - use address if available, otherwise use coordinates with name
+        if (address != null && address.isNotEmpty) {
+          // Build URL with query parameters properly
+          mapsUri = Uri(
+            scheme: 'https',
+            host: 'maps.apple.com',
+            queryParameters: {'q': restaurantName, 'address': address},
           );
+        } else {
+          mapsUri = Uri(
+            scheme: 'https',
+            host: 'maps.apple.com',
+            queryParameters: {'q': restaurantName, 'll': '$lat,$lng'},
+          );
+        }
+      } else {
+        // Use Google Maps on Android - use name and coordinates
+        final query = address != null && address.isNotEmpty
+            ? '$restaurantName, $address'
+            : restaurantName;
+        mapsUri = Uri(
+          scheme: 'https',
+          host: 'www.google.com',
+          path: '/maps/search/',
+          queryParameters: {'api': '1', 'query': query},
+        );
+      }
+
+      if (await canLaunchUrl(mapsUri)) {
+        await launchUrl(mapsUri, mode: LaunchMode.externalApplication);
+      } else {
+        // Fallback to web Google Maps
+        final query = address != null && address.isNotEmpty
+            ? '$restaurantName, $address'
+            : restaurantName;
+        final webMapsUri = Uri(
+          scheme: 'https',
+          host: 'www.google.com',
+          path: '/maps/search/',
+          queryParameters: {'api': '1', 'query': query},
+        );
+        if (await canLaunchUrl(webMapsUri)) {
+          await launchUrl(webMapsUri, mode: LaunchMode.externalApplication);
+        } else {
+          if (context.mounted) {
+            showCupertinoDialog(
+              context: context,
+              builder: (context) => CupertinoAlertDialog(
+                title: const Text('Error'),
+                content: const Text('Could not open maps app'),
+                actions: [
+                  CupertinoDialogAction(
+                    child: const Text('OK'),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                ],
+              ),
+            );
+          }
         }
       }
     } catch (e) {
       print('Error opening maps app: $e');
     }
+  }
+
+  // Convert Flutter Color to Google Maps hue value (0-360)
+  double _colorToHue(Color color) {
+    // Flutter's HSVColor.fromColor() handles the conversion automatically
+    return HSVColor.fromColor(color).hue;
   }
 }

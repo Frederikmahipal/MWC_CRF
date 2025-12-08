@@ -1,12 +1,12 @@
 import 'package:flutter/cupertino.dart';
 
 class AppSettings {
-  static const Color primaryColor = Color(0xFF2C5530);
-  static const Color secondaryColor = Color(0xFF95A5A6);
-  static const Color accentColor = Color(0xFFF39C12);
-  static const Color successColor = Color(0xFF27AE60);
-  static const Color warningColor = Color(0xFFF39C12);
-  static const Color errorColor = Color(0xFFE74C3C);
+  static const Color primaryColor = Color(0xFF10B981); 
+  static const Color secondaryColor = Color(0xFF64748B); 
+  static const Color accentColor = Color(0xFF3B82F6); 
+  static const Color successColor = Color(0xFF10B981);
+  static const Color warningColor = Color(0xFFF59E0B); 
+  static const Color errorColor = Color(0xFFEF4444); 
 
   static Color getBackgroundColor(BuildContext context) {
     return CupertinoTheme.brightnessOf(context) == Brightness.dark
@@ -46,21 +46,20 @@ class AppSettings {
 
   static Color getPrimaryColor(BuildContext context) {
     return CupertinoTheme.brightnessOf(context) == Brightness.dark
-        ? const Color(0xFF4A6741)
+        ? const Color(0xFF34D399) 
         : primaryColor;
   }
 
   static Color getShadowColor(BuildContext context) {
     return CupertinoTheme.brightnessOf(context) == Brightness.dark
         ? const Color(0x60000000)
-        : const Color(0x1A2C5530);
+        : const Color(0x1A10B981); 
   }
 
   static const String appName = 'Copenhagen Restaurant Finder';
   static const String appVersion = '1.0.0';
 
-  static const String overpassApiUrl =
-      'https://overpass-api.de/api/interpreter';
+
   static const double defaultMapZoom = 13.0;
   static const double defaultSearchRadius = 5.0;
 

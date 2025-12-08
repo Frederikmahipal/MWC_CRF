@@ -2,11 +2,12 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 import '../../core/app_settings.dart';
 import '../../states/chat_state.dart';
+import '../../models/restaurant.dart';
 import 'restaurant_recommendation_card.dart';
 
 class ChatMessageWidget extends StatelessWidget {
   final ChatMessage message;
-  final VoidCallback? onRestaurantTap;
+  final ValueChanged<Restaurant>? onRestaurantTap;
 
   const ChatMessageWidget({
     super.key,
@@ -87,9 +88,7 @@ class ChatMessageWidget extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 8),
-              Expanded(
-                child: _buildAIResponseWithCards(context),
-              ),
+              Expanded(child: _buildAIResponseWithCards(context)),
             ],
           ),
         ],
@@ -119,7 +118,7 @@ class ChatMessageWidget extends StatelessWidget {
       widgets.add(
         RestaurantRecommendationCard(
           restaurant: restaurant,
-          onTap: () => onRestaurantTap?.call(),
+          onTap: (restaurant) => onRestaurantTap?.call(restaurant),
         ),
       );
       widgets.add(const SizedBox(height: 8));

@@ -4,7 +4,7 @@ import '../../models/restaurant.dart';
 
 class RestaurantRecommendationCard extends StatelessWidget {
   final Restaurant restaurant;
-  final VoidCallback? onTap;
+  final ValueChanged<Restaurant>? onTap;
 
   const RestaurantRecommendationCard({
     super.key,
@@ -18,7 +18,7 @@ class RestaurantRecommendationCard extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 8),
       child: CupertinoButton(
         padding: EdgeInsets.zero,
-        onPressed: onTap,
+        onPressed: () => onTap?.call(restaurant),
         child: Container(
           width: double.infinity,
           padding: const EdgeInsets.all(12),
@@ -70,24 +70,6 @@ class RestaurantRecommendationCard extends StatelessWidget {
                       ),
                       const SizedBox(height: 4),
                     ],
-                    Row(
-                      children: [
-                        Icon(
-                          CupertinoIcons.star_fill,
-                          color: CupertinoColors.systemYellow,
-                          size: 14,
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          '${restaurant.averageRating.toStringAsFixed(1)}/5 (${restaurant.totalReviews} reviews)',
-                          style: TextStyle(
-                            color: AppSettings.getSecondaryTextColor(context),
-                            fontSize: 12,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 4),
                     _buildServiceIcons(context),
                   ],
                 ),

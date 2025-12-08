@@ -1,10 +1,12 @@
 import 'package:flutter/cupertino.dart';
-import 'package:flutter_map/flutter_map.dart';
-import 'package:latlong2/latlong.dart';
+import 'package:flutter/material.dart' show HSVColor;
+import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:latlong2/latlong.dart' as latlong;
 import '../core/app_settings.dart';
 import '../services/restaurant_service.dart';
 import '../models/restaurant.dart';
 import 'restaurants/restaurant_main_page.dart';
+import 'package:geolocator/geolocator.dart';
 
 class SearchPage extends StatefulWidget {
   const SearchPage({super.key});
@@ -16,6 +18,9 @@ class SearchPage extends StatefulWidget {
 class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
   final TextEditingController _searchController = TextEditingController();
   final RestaurantService _restaurantService = RestaurantService();
+  GoogleMapController? _mapController;
+  latlong.LatLng? _userLocation;
+  bool _isGettingLocation = false;
 
   List<Restaurant> _allRestaurants = [];
   List<Restaurant> _filteredRestaurants = [];
@@ -40,6 +45,7 @@ class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
   void dispose() {
     _searchController.dispose();
     _mapAnimationController.dispose();
+    _mapController?.dispose();
     super.dispose();
   }
 
@@ -48,7 +54,6 @@ class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
       final restaurants = await _restaurantService.getAllRestaurants();
 
       if (restaurants.isNotEmpty) {
-        print('🍽️ Sample restaurant cuisines:');
         for (int i = 0; i < 5 && i < restaurants.length; i++) {
           print('  ${restaurants[i].name}: ${restaurants[i].cuisines}');
         }
@@ -62,6 +67,136 @@ class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
     } catch (e) {
       setState(() {
         _isLoading = false;
+      });
+    }
+  }
+
+  Future<void> _getUserLocation() async {
+    setState(() {
+      _isGettingLocation = true;
+    });
+
+    try {
+      // Check if location services are enabled
+      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
+        if (mounted) {
+          showCupertinoDialog(
+            context: context,
+            builder: (context) => CupertinoAlertDialog(
+              title: const Text('Location Services Disabled'),
+              content: const Text(
+                'Please enable location services to use this feature.',
+              ),
+              actions: [
+                CupertinoDialogAction(
+                  child: const Text('OK'),
+                  onPressed: () => Navigator.of(context).pop(),
+                ),
+              ],
+            ),
+          );
+        }
+        setState(() {
+          _isGettingLocation = false;
+        });
+        return;
+      }
+
+      // Check location permission
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.denied) {
+          if (mounted) {
+            showCupertinoDialog(
+              context: context,
+              builder: (context) => CupertinoAlertDialog(
+                title: const Text('Location Permission Denied'),
+                content: const Text(
+                  'Location permission is required to show your location on the map.',
+                ),
+                actions: [
+                  CupertinoDialogAction(
+                    child: const Text('OK'),
+                    onPressed: () => Navigator.of(context).pop(),
+                  ),
+                ],
+              ),
+            );
+          }
+          setState(() {
+            _isGettingLocation = false;
+          });
+          return;
+        }
+      }
+
+      if (permission == LocationPermission.deniedForever) {
+        if (mounted) {
+          showCupertinoDialog(
+            context: context,
+            builder: (context) => CupertinoAlertDialog(
+              title: const Text('Location Permission Permanently Denied'),
+              content: const Text(
+                'Please enable location permission in app settings.',
+              ),
+              actions: [
+                CupertinoDialogAction(
+                  child: const Text('OK'),
+                  onPressed: () => Navigator.of(context).pop(),
+                ),
+              ],
+            ),
+          );
+        }
+        setState(() {
+          _isGettingLocation = false;
+        });
+        return;
+      }
+
+      // Get current position
+      Position position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
+      );
+
+      final userLocation = latlong.LatLng(
+        position.latitude,
+        position.longitude,
+      );
+
+      setState(() {
+        _userLocation = userLocation;
+        _isGettingLocation = false;
+      });
+
+      // Animate map to user location
+      _mapController?.animateCamera(
+        CameraUpdate.newLatLngZoom(
+          LatLng(userLocation.latitude, userLocation.longitude),
+          15.0,
+        ),
+      );
+    } catch (e) {
+      print('Error getting location: $e');
+      if (mounted) {
+        showCupertinoDialog(
+          context: context,
+          builder: (context) => CupertinoAlertDialog(
+            title: const Text('Error'),
+            content: Text('Failed to get your location: $e'),
+            actions: [
+              CupertinoDialogAction(
+                child: const Text('OK'),
+                onPressed: () => Navigator.of(context).pop(),
+              ),
+            ],
+          ),
+        );
+      }
+      setState(() {
+        _isGettingLocation = false;
       });
     }
   }
@@ -104,7 +239,6 @@ class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
       } else {
         _selectedCuisines.add(cuisine);
       }
-      print('🔍 Selected cuisines: $_selectedCuisines');
       _filterRestaurants();
     });
   }
@@ -215,8 +349,6 @@ class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
   }
 
   Widget _buildMiniMap() {
-    final isDark = CupertinoTheme.brightnessOf(context) == Brightness.dark;
-
     return AnimatedContainer(
       duration: const Duration(milliseconds: 300),
       margin: const EdgeInsets.all(8),
@@ -225,26 +357,22 @@ class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
         borderRadius: BorderRadius.circular(12),
         child: Stack(
           children: [
-            FlutterMap(
-              options: MapOptions(
-                initialCenter: const LatLng(55.6761, 12.5683),
-                initialZoom: 13.0,
-                minZoom: 10.0,
-                maxZoom: 18.0,
-                interactionOptions: const InteractionOptions(
-                  flags: InteractiveFlag.pinchZoom | InteractiveFlag.drag,
-                ),
+            GoogleMap(
+              initialCameraPosition: const CameraPosition(
+                target: LatLng(55.6761, 12.5683), // Copenhagen coordinates
+                zoom: 13.0,
               ),
-              children: [
-                TileLayer(
-                  urlTemplate: isDark
-                      ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
-                      : 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                  subdomains: const ['a', 'b', 'c'],
-                  userAgentPackageName: 'com.example.crf',
-                ),
-                MarkerLayer(markers: _buildFilteredMarkers()),
-              ],
+              markers: _buildGoogleMapMarkers(),
+              mapType: MapType.normal,
+              zoomControlsEnabled: false,
+              myLocationButtonEnabled: false,
+              scrollGesturesEnabled: true,
+              zoomGesturesEnabled: true,
+              tiltGesturesEnabled: false,
+              rotateGesturesEnabled: false,
+              onMapCreated: (GoogleMapController controller) {
+                // Mini map doesn't need controller
+              },
             ),
             Positioned(
               top: 8,
@@ -268,85 +396,118 @@ class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
   }
 
   Widget _buildExpandedMap() {
-    final isDark = CupertinoTheme.brightnessOf(context) == Brightness.dark;
-
     return Stack(
       key: const ValueKey('expanded'),
       children: [
-        FlutterMap(
-          options: MapOptions(
-            initialCenter: const LatLng(55.6761, 12.5683),
-            initialZoom: 13.0,
-            minZoom: 10.0,
-            maxZoom: 18.0,
+        GoogleMap(
+          initialCameraPosition: const CameraPosition(
+            target: LatLng(55.6761, 12.5683), // Copenhagen coordinates
+            zoom: 13.0,
           ),
-          children: [
-            TileLayer(
-              urlTemplate: isDark
-                  ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
-                  : 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-              subdomains: const ['a', 'b', 'c'],
-              userAgentPackageName: 'com.example.crf',
-            ),
-            MarkerLayer(markers: _buildFilteredMarkers()),
-          ],
+          markers: _buildGoogleMapMarkers(),
+          mapType: MapType.normal,
+          zoomControlsEnabled: true,
+          myLocationButtonEnabled: false,
+          myLocationEnabled: _userLocation != null,
+          onMapCreated: (GoogleMapController controller) {
+            _mapController = controller;
+          },
         ),
         Positioned(
           top: 50,
           right: 16,
-          child: CupertinoButton(
-            padding: const EdgeInsets.all(12),
-            color: AppSettings.primaryColor.withOpacity(0.9),
-            borderRadius: BorderRadius.circular(20),
-            onPressed: _toggleMapExpansion,
-            child: const Icon(
-              CupertinoIcons.xmark,
-              color: CupertinoColors.white,
-              size: 18,
-            ),
+          child: Column(
+            children: [
+              // Location button
+              CupertinoButton(
+                padding: const EdgeInsets.all(12),
+                color: AppSettings.primaryColor.withOpacity(0.9),
+                borderRadius: BorderRadius.circular(20),
+                onPressed: _isGettingLocation ? null : _getUserLocation,
+                child: _isGettingLocation
+                    ? const CupertinoActivityIndicator(
+                        color: CupertinoColors.white,
+                      )
+                    : const Icon(
+                        CupertinoIcons.location_fill,
+                        color: CupertinoColors.white,
+                        size: 18,
+                      ),
+              ),
+              const SizedBox(height: 8),
+              // Close button
+              CupertinoButton(
+                padding: const EdgeInsets.all(12),
+                color: AppSettings.primaryColor.withOpacity(0.9),
+                borderRadius: BorderRadius.circular(20),
+                onPressed: _toggleMapExpansion,
+                child: const Icon(
+                  CupertinoIcons.xmark,
+                  color: CupertinoColors.white,
+                  size: 18,
+                ),
+              ),
+            ],
           ),
         ),
       ],
     );
   }
 
-  List<Marker> _buildFilteredMarkers() {
-    return _filteredRestaurants.map((restaurant) {
-      return Marker(
-        point: restaurant.location,
-        width: 20,
-        height: 20,
-        child: GestureDetector(
+  Set<Marker> _buildGoogleMapMarkers() {
+    final markers = <Marker>{};
+    final primaryColor = AppSettings.getPrimaryColor(context);
+    final accentColor = AppSettings.accentColor;
+
+    final primaryHue = _colorToHue(primaryColor);
+    final accentHue = _colorToHue(accentColor);
+
+    // Add restaurant markers
+    for (final restaurant in _filteredRestaurants) {
+      markers.add(
+        Marker(
+          markerId: MarkerId(restaurant.id),
+          position: LatLng(
+            restaurant.location.latitude,
+            restaurant.location.longitude,
+          ),
+          icon: BitmapDescriptor.defaultMarkerWithHue(primaryHue),
+          infoWindow: InfoWindow(
+            title: restaurant.name,
+            snippet: restaurant.cuisines.join(', '),
+          ),
           onTap: () {
             Navigator.of(context).push(
               CupertinoPageRoute(
-                builder: (context) =>
-                    RestaurantMainPage(restaurant: restaurant),
+                builder: (context) => RestaurantMainPage(
+                  key: ValueKey(restaurant.id),
+                  restaurant: restaurant,
+                ),
               ),
             );
           },
-          child: Container(
-            decoration: BoxDecoration(
-              color: AppSettings.primaryColor,
-              shape: BoxShape.circle,
-              border: Border.all(color: CupertinoColors.white, width: 1),
-              boxShadow: [
-                BoxShadow(
-                  color: CupertinoColors.black.withOpacity(0.2),
-                  blurRadius: 2,
-                  offset: const Offset(0, 1),
-                ),
-              ],
-            ),
-            child: const Icon(
-              CupertinoIcons.location_solid,
-              color: CupertinoColors.white,
-              size: 10,
-            ),
-          ),
         ),
       );
-    }).toList();
+    }
+
+    // Add user location marker if available
+    if (_userLocation != null) {
+      markers.add(
+        Marker(
+          markerId: const MarkerId('user_location'),
+          position: LatLng(_userLocation!.latitude, _userLocation!.longitude),
+          icon: BitmapDescriptor.defaultMarkerWithHue(accentHue),
+          infoWindow: const InfoWindow(title: 'Your Location'),
+        ),
+      );
+    }
+
+    return markers;
+  }
+
+  // Convert Flutter Color to Google Maps hue value (0-360)
+  double _colorToHue(Color color) {
+    return HSVColor.fromColor(color).hue;
   }
 
   Widget _buildResultsList() {
@@ -451,9 +612,13 @@ class _SearchPageState extends State<SearchPage> with TickerProviderStateMixin {
           ],
         ),
         onTap: () {
+
           Navigator.of(context).push(
             CupertinoPageRoute(
-              builder: (context) => RestaurantMainPage(restaurant: restaurant),
+              builder: (context) => RestaurantMainPage(
+                key: ValueKey(restaurant.id),
+                restaurant: restaurant,
+              ),
             ),
           );
         },

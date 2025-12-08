@@ -1,5 +1,4 @@
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/user.dart';
 import '../repositories/remote/firestore_service.dart';
 import 'pin_auth_service.dart';
@@ -30,7 +29,6 @@ class AuthService {
         final userData = await FirestoreService.getUser(userId);
         if (userData != null) {
           _currentUser = userData;
-          print('🔍 User loaded from storage: ${userData.fullName}');
         }
       }
     } catch (e) {
@@ -44,34 +42,25 @@ class AuthService {
       try {
         final prefs = await SharedPreferences.getInstance();
         final lastAuthTime = prefs.getInt(_keyLastAuthTime);
-        print('🔍 Session check - Last auth time: $lastAuthTime');
+        print('Session check - Last auth time: $lastAuthTime');
 
         if (lastAuthTime != null) {
           final sessionDuration =
               DateTime.now().millisecondsSinceEpoch - lastAuthTime;
-          const sessionTimeout = 0; 
-          print(
-            '🔍 Session duration: ${sessionDuration}ms, timeout: ${sessionTimeout}ms',
-          );
+          const sessionTimeout = 0;
 
           if (sessionDuration > sessionTimeout) {
-            print('🔍 Session expired, requiring re-authentication');
             await _expireSession();
           } else {
-            print('🔍 Session valid, staying logged in');
             _isAuthenticated = true;
           }
         } else {
-          print('🔍 No last auth time found, logging out');
           await logout();
         }
       } catch (e) {
-        print('Error checking session validity: $e');
         await logout();
       }
-    } else {
-      print('🔍 No user found, not authenticated');
-    }
+    } 
   }
 
   static Future<bool> loginWithPin(String pin) async {
@@ -125,7 +114,7 @@ class AuthService {
   static Future<void> loadUserForLogin(User user) async {
     try {
       _currentUser = user;
-      _isAuthenticated = false; 
+      _isAuthenticated = false;
 
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString(_keyCurrentUser, user.id);
@@ -187,7 +176,6 @@ class AuthService {
       print('Error during logout: $e');
     }
   }
-
 
   static Future<void> _clearUser() async {
     _currentUser = null;

@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -216,8 +217,8 @@ class _PinSetupPageState extends State<PinSetupPage> {
     if (!_isConfirming) {
       setState(() {
         _isConfirming = true;
-        _confirmPin = _pin; 
-        _pin = ''; 
+        _confirmPin = _pin;
+        _pin = '';
       });
     } else {
       if (_pin == _confirmPin) {
@@ -293,13 +294,14 @@ class _PinSetupPageState extends State<PinSetupPage> {
       );
       return;
     }
+    final biometricName = Platform.isIOS ? 'Face ID' : 'Biometric';
     showCupertinoDialog(
       context: context,
       barrierDismissible: false,
       builder: (context) => CupertinoAlertDialog(
-        title: const Text('Enable Face ID?'),
-        content: const Text(
-          'You can use Face ID for faster access to your account. You can always change this in settings.',
+        title: Text('Enable $biometricName?'),
+        content: Text(
+          'You can use $biometricName for faster access to your account. You can always change this in settings.',
         ),
         actions: [
           CupertinoDialogAction(
@@ -340,10 +342,11 @@ class _PinSetupPageState extends State<PinSetupPage> {
               (route) => false,
             );
           } else {
+            final biometricName = Platform.isIOS ? 'Face ID' : 'Biometric';
             showCupertinoDialog(
               context: context,
               builder: (context) => CupertinoAlertDialog(
-                title: const Text('Face ID Setup Failed'),
+                title: Text('$biometricName Setup Failed'),
                 actions: [
                   CupertinoDialogAction(
                     child: const Text('OK'),
@@ -364,12 +367,13 @@ class _PinSetupPageState extends State<PinSetupPage> {
         }
       } else {
         if (mounted) {
+          final biometricName = Platform.isIOS ? 'Face ID' : 'Biometric';
           showCupertinoDialog(
             context: context,
             builder: (context) => CupertinoAlertDialog(
-              title: const Text('Face ID Authentication Failed'),
-              content: const Text(
-                'Face ID authentication is required to enable this feature. You can still use your PIN.',
+              title: Text('$biometricName Authentication Failed'),
+              content: Text(
+                '$biometricName authentication is required to enable this feature. You can still use your PIN.',
               ),
               actions: [
                 CupertinoDialogAction(

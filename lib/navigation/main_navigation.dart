@@ -1,7 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import '../pages/search_page.dart';
 import '../pages/ai_chat_page.dart';
-import '../pages/notifications_page.dart';
 import '../pages/profile/profile_page.dart';
 import '../core/app_settings.dart';
 
@@ -25,10 +24,6 @@ class MainNavigation extends StatelessWidget {
             label: 'Search',
           ),
           BottomNavigationBarItem(
-            icon: Icon(CupertinoIcons.chart_bar),
-            label: 'Insights',
-          ),
-          BottomNavigationBarItem(
             icon: Icon(CupertinoIcons.person),
             label: 'Profile',
           ),
@@ -41,8 +36,6 @@ class MainNavigation extends StatelessWidget {
           case 1:
             return const SearchPage();
           case 2:
-            return const NotificationsPage();
-          case 3:
             return const ProfilePage();
           default:
             return const AIChatPage();

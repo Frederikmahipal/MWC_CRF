@@ -9,7 +9,7 @@ part 'database.g.dart';
 class Restaurants extends Table {
   TextColumn get id => text()();
   TextColumn get name => text()();
-  TextColumn get cuisines => text()(); 
+  TextColumn get cuisines => text()();
   RealColumn get latitude => real()();
   RealColumn get longitude => real()();
   TextColumn get phone => text().nullable()();
@@ -28,6 +28,8 @@ class Restaurants extends Table {
   BoolColumn get hasWifi => boolean().withDefault(const Constant(false))();
   BoolColumn get hasDriveThrough =>
       boolean().withDefault(const Constant(false))();
+  RealColumn get averageRating => real().withDefault(const Constant(0.0))();
+  IntColumn get totalReviews => integer().withDefault(const Constant(0))();
   DateTimeColumn get createdAt => dateTime()();
   DateTimeColumn get updatedAt => dateTime()();
 
@@ -40,7 +42,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 3;
+  int get schemaVersion => 4;
 }
 
 LazyDatabase _openConnection() {
