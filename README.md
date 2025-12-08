@@ -11,9 +11,11 @@ A Flutter mobile app to find restaurants in Copenhagen using AI-powered chat, ma
 
 ## Screenshots
 
+<div >
   <img src="assets/images/screenshot_chat.png" alt="Chat Interface" width="250"/>
   <img src="assets/images/screenshot_map.png" alt="Map View" width="250"/>
   <img src="assets/images/screenshot_restaurant.png" alt="Restaurant Details" width="250"/> 
+</div>
 
 ## Tech Stack
 
