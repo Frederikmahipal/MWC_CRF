@@ -1,16 +1,35 @@
-# crf
+# Copenhagen Restaurant Finder
 
-A new Flutter project.
+A Flutter mobile app to find restaurants in Copenhagen using AI-powered chat, machine learning-based food recognition, and geolocation.
+
+## Features
+
+- **AI Chat Interface** - Conversational restaurant recommendations via OpenRouter API
+- **ML Food Recognition** - Take a photo of food -> Find restaurants that serve it 
+- **Google Maps Integration** - View restaurants on map with your location
+- **Biometric Authentication** - Face ID/Touch ID login
+
+## Screenshots
+
+  <img src="assets/images/screenshot_chat.png" alt="Chat Interface" width="250"/>
+  <img src="assets/images/screenshot_map.png" alt="Map View" width="250"/>
+  <img src="assets/images/screenshot_restaurant.png" alt="Restaurant Details" width="250"/> 
+
+## Tech Stack
+
+- **Flutter** 
+- **SQLite** 
+- **TensorFlow Lite**
+- **Google Maps**
+- **Firebase**
+- **OpenRouter API**
 
 ## Getting Started
 
-This project is a starting point for a Flutter application.
-
-A few resources to get you started if this is your first Flutter project:
-
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+1. Clone the repository
+2. Install dependencies: `flutter pub get`
+3. Create `.env` file with your API keys:
+   - `GOOGLE_PLACES_API_KEY`
+   - `GOOGLE_MAPS_API_KEY`
+   - `OPENROUTER_API_KEY`
+4. Run: `flutter run`
